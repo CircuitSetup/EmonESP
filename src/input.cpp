@@ -30,37 +30,31 @@
 
 #include <ESP8266WiFi.h>
 
-String input_string="";
-String last_datastr="";
+char input_string[MAX_DATA_LEN] = "";
+char last_datastr[MAX_DATA_LEN] = "";
 
 boolean input_get(JsonDocument &data)
 {
   boolean gotLine = false;
   boolean gotData = false;
-  String line;
+  char * line;
 
   // If data from test API e.g `http://<IP-ADDRESS>/input?string=CT1:3935,CT2:325,T1:12.5,T2:16.9,T3:11.2,T4:34.7`
-  if(input_string.length() > 0) {
-    line = input_string;
-    input_string = "";
-    gotLine = true;
-  }
-  // If data received on serial
-  else if (EMONTX_PORT.available()) {
-    // Could check for string integrity here
-    line = EMONTX_PORT.readStringUntil('\n');
+  if(strlen(input_string) > 0) {
+    strcpy(line, input_string);
+    strcpy(input_string, "");
     gotLine = true;
   }
 
   if(gotLine)
   {
     // Get rid of any whitespace, newlines etc
-    line.trim();
+    //line.trim();
 
-    int len = line.length();
-    if(len > 0) 
+    int len = strlen(line);
+    if(len > 0)
     {
-      DEBUG.printf("Got '%s'\n", line.c_str());
+      DEBUG.printf("Got '%s'\n", line);
 
       for(int i = 0; i < len; i++)
       {
@@ -101,7 +95,7 @@ boolean input_get(JsonDocument &data)
     data["packets_sent"] = packets_sent;
     data["packets_success"] = packets_success;
 
-    last_datastr.clear();
+    last_datastr[0] = '\0';
     serializeJson(data, last_datastr);
   }
 

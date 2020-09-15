@@ -34,16 +34,64 @@ String getTime();
 
 void setTimeOffset();
 
-#ifndef WIFI_LED
-#define WIFI_LED 0
+//#define ENABLE_WDT
+
+#ifndef MAX_DATA_LEN
+#define MAX_DATA_LEN 4096
 #endif
+
+#ifndef WIFI_LED
+#define WIFI_LED 2
+#endif
+
+#ifdef WIFI_LED
 
 #ifndef WIFI_LED_ON_STATE
 #define WIFI_LED_ON_STATE LOW
 #endif
 
+//the time the LED actually stays on
+#ifndef WIFI_LED_ON_TIME
+#define WIFI_LED_ON_TIME 50
+#endif
+
+//times the LED is off...
+#ifndef WIFI_LED_AP_TIME
+#define WIFI_LED_AP_TIME 2000
+#endif
+
+#ifndef WIFI_LED_AP_CONNECTED_TIME
+#define WIFI_LED_AP_CONNECTED_TIME 1000
+#endif
+
+#ifndef WIFI_LED_STA_CONNECTING_TIME
+#define WIFI_LED_STA_CONNECTING_TIME 500
+#endif
+
+#ifndef WIFI_LED_STA_CONNECTED_TIME
+#define WIFI_LED_STA_CONNECTED_TIME 4000
+#endif
+
+#endif
+
+#ifndef WIFI_BUTTON_AP_TIMEOUT
+#define WIFI_BUTTON_AP_TIMEOUT              (5 * 1000)
+#endif
+
+#ifndef WIFI_BUTTON_FACTORY_RESET_TIMEOUT
+#define WIFI_BUTTON_FACTORY_RESET_TIMEOUT   (10 * 1000)
+#endif
+
+#ifndef WIFI_CLIENT_DISCONNECT_RETRY
+#define WIFI_CLIENT_DISCONNECT_RETRY         (10 * 1000)
+#endif
+
+#ifndef WIFI_CLIENT_RETRY_TIMEOUT
+#define WIFI_CLIENT_RETRY_TIMEOUT           (5 * 60 * 1000) //5 min
+#endif
+
 #ifndef WIFI_BUTTON
-#define WIFI_BUTTON 0
+#define WIFI_BUTTON 3
 #endif
 
 #ifndef WIFI_BUTTON_PRESSED_STATE
@@ -51,7 +99,7 @@ void setTimeOffset();
 #endif
 
 #ifndef CONTROL_PIN
-#define CONTROL_PIN 2
+#define CONTROL_PIN 14
 #endif
 
 #ifndef CONTROL_PIN_ON_STATE

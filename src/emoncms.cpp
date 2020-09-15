@@ -27,9 +27,6 @@
 #undef ENABLE_DEBUG
 #endif
 
-#include <Arduino.h>
-#include <ArduinoJson.h>
-
 #include "emonesp.h"
 #include "emoncms.h"
 #include "app_config.h"
@@ -51,14 +48,18 @@ const char *post_path = "/input/post?";
 static void emoncms_result(bool success, String message)
 {
   StaticJsonDocument<128> event;
-  
+
 
   if(success) {
     packets_success++;
     emoncms_connection_error_count = 0;
   } else {
     if(++emoncms_connection_error_count > 30) {
-      ESP.restart();
+      #ifdef ESP32
+            esp_restart();
+      #else
+            ESP.restart();
+      #endif
     }
   }
 
@@ -96,9 +97,11 @@ void emoncms_publish(JsonDocument &data)
     if (emoncms_fingerprint != 0) {
       // HTTPS on port 443 if HTTPS fingerprint is present
       DBUGLN("HTTPS Enabled");
-      result =
-        get_https(emoncms_fingerprint.c_str(), emoncms_server.c_str(), url,
-                  443);
+      #ifdef ESP32
+      result = get_http(emoncms_server.c_str(), url, 443, emoncms_fingerprint.c_str());
+      #elif defined(ESP8266)
+      result = get_https(emoncms_fingerprint.c_str(), emoncms_server.c_str(), url, 443);
+      #endif
     } else {
       // Plain HTTP if other emoncms server e.g EmonPi
       DBUGLN("Plain old HTTP");

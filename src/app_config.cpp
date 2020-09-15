@@ -3,19 +3,18 @@
 #include "mqtt.h"
 #include "emoncms.h"
 #include "input.h"
-
 #include "app_config.h"
-
-#include <Arduino.h>
-#include <EEPROM.h>             // Save config settings
-#include <ConfigJson.h>
 
 #define EEPROM_SIZE     4096
 #define CHECKSUM_SEED    128
 
 static int getNodeId()
 {
+  #ifdef ESP32
+  unsigned long chip_id = ESP.getEfuseMac()
+  #else
   unsigned long chip_id = ESP.getChipId();
+  #endif
   DBUGVAR(chip_id);
   int chip_tmp = chip_id / 10000;
   chip_tmp = chip_tmp * 10000;
@@ -53,7 +52,19 @@ String mqtt_user = "";
 String mqtt_pass = "";
 String mqtt_feed_prefix = "";
 
-// Timer Settings 
+// Calibration Settings
+String voltage_cal = "";
+String ct1_cal = "";
+String ct2_cal = "";
+String freq_cal = "";
+String gain_cal = "";
+#ifdef SOLAR_METER
+String svoltage_cal = "";
+String sct1_cal = "";
+String sct2_cal = "";
+#endif
+
+// Timer Settings
 int timer_start1 = 0;
 int timer_stop1 = 0;
 int timer_start2 = 0;
@@ -73,7 +84,7 @@ void config_changed(String name);
 
 ConfigOptDefenition<uint32_t> flagsOpt = ConfigOptDefenition<uint32_t>(flags, 0, "flags", "f");
 
-ConfigOpt *opts[] = 
+ConfigOpt *opts[] =
 {
 // Wifi Network Strings
   new ConfigOptDefenition<String>(esid, "", "ssid", "ws"),
@@ -101,7 +112,20 @@ ConfigOpt *opts[] =
   new ConfigOptSecret(mqtt_pass, "emonpimqtt2016", "mqtt_pass", "mp"),
   new ConfigOptDefenition<String>(mqtt_feed_prefix, "", "mqtt_feed_prefix", "mp"),
 
-// Timer Settings 
+// MQTT Settings
+  new ConfigOptDefenition<String>(voltage_cal, "3920", "voltage_cal", "cv"),
+  new ConfigOptDefenition<String>(ct1_cal, "39473", "ct1_cal", "ct1"),
+  new ConfigOptDefenition<String>(ct2_cal, "39473", "ct2_cal", "ct2"),
+  new ConfigOptDefenition<String>(freq_cal, "4485", "freq_cal", "cf"),
+  new ConfigOptDefenition<String>(gain_cal, "21", "gain_cal", "cg"),
+  #ifdef SOLAR_METER
+  new ConfigOptDefenition<String>(svoltage_cal, "3920", "svoltage_cal", "scv"),
+  new ConfigOptDefenition<String>(sct1_cal, "39473", "sct1_cal", "sct1"),
+  new ConfigOptDefenition<String>(sct2_cal, "39473", "sct2_cal", "sct2"),
+  #endif
+
+
+// Timer Settings
   new ConfigOptDefenition<int>(timer_start1, 0, "timer_start1", "tsr1"),
   new ConfigOptDefenition<int>(timer_stop1, 0, "timer_stop1", "tsp1"),
   new ConfigOptDefenition<int>(timer_start2, 0, "timer_start2", "tsr2"),
@@ -127,8 +151,7 @@ ConfigJson config(opts, sizeof(opts) / sizeof(opts[0]), EEPROM_SIZE);
 // -------------------------------------------------------------------
 // Reset EEPROM, wipes all settings
 // -------------------------------------------------------------------
-void
-ResetEEPROM() {
+void ResetEEPROM() {
   EEPROM.begin(EEPROM_SIZE);
 
   //DEBUG.println("Erasing EEPROM");
@@ -142,8 +165,7 @@ ResetEEPROM() {
 // -------------------------------------------------------------------
 // Load saved settings from EEPROM
 // -------------------------------------------------------------------
-void
-config_load_settings() 
+void config_load_settings()
 {
   config.onChanged(config_changed);
 
@@ -163,7 +185,7 @@ void config_changed(String name)
     }
     if(emoncms_connected != config_emoncms_enabled()) {
       emoncms_updated = true;
-    } 
+    }
   } else if(name.startsWith("mqtt_")) {
     mqtt_restart();
   } else if(name.startsWith("emoncms_")) {
@@ -185,7 +207,7 @@ bool config_deserialize(const char *json)
   return config.deserialize(json);
 }
 
-bool config_deserialize(DynamicJsonDocument &doc) 
+bool config_deserialize(DynamicJsonDocument &doc)
 {
   return config.deserialize(doc);
 }
@@ -202,16 +224,16 @@ bool config_serialize(DynamicJsonDocument &doc, bool longNames, bool compactOutp
 
 void config_set(const char *name, uint32_t val) {
   config.set(name, val);
-} 
+}
 void config_set(const char *name, String val) {
   config.set(name, val);
-} 
+}
 void config_set(const char *name, bool val) {
   config.set(name, val);
-} 
+}
 void config_set(const char *name, double val) {
   config.set(name, val);
-} 
+}
 
 void config_save_emoncms(bool enable, String server, String path, String node, String apikey,
                     String fingerprint)
@@ -252,8 +274,27 @@ void config_save_mqtt_server(String server)
   config.commit();
 }
 
-void
-config_save_admin(String user, String pass) {
+void config_save_cal(String voltage, String ct1, String ct2, String freq, String gain
+#ifdef SOLAR_METER
+  , String svoltage, String sct1, String sct2);
+#else
+  )
+#endif
+{
+  config.set("voltage_cal", voltage);
+  config.set("ct1_cal", ct1);
+  config.set("ct2_cal", ct2);
+  config.set("freq_cal", freq);
+  config.set("gain_cal", gain);
+  #ifdef SOLAR_METER
+  config.set("svoltage_cal", svoltage);
+  config.set("sct1_cal", sct1);
+  config.set("sct2_cal", sct2);
+  #endif
+  config.commit();
+}
+
+void config_save_admin(String user, String pass) {
   config.set("www_username", user);
   config.set("www_password", pass);
   config.commit();
@@ -270,39 +311,34 @@ void config_save_timer(int start1, int stop1, int start2, int stop2, int qvoltag
   config.commit();
 }
 
-
 void config_save_voltage_output(int qvoltage_output, int save_to_eeprom)
 {
   voltage_output = qvoltage_output;
-  
+
   if (save_to_eeprom) {
     config.set("voltage_output", qvoltage_output);
     config.commit();
   }
 }
 
-void
-config_save_advanced(String hostname) {
+void config_save_advanced(String hostname) {
   config.set("hostname", hostname);
   config.commit();
 }
 
-void
-config_save_wifi(String qsid, String qpass)
+void config_save_wifi(String qsid, String qpass)
 {
   config.set("ssid", qsid);
   config.set("pass", qpass);
   config.commit();
 }
 
-void
-config_save_flags(uint32_t newFlags) {
+void config_save_flags(uint32_t newFlags) {
   config.set("flags", newFlags);
   config.commit();
 }
 
-void
-config_reset() {
+void config_reset() {
   ResetEEPROM();
   config.reset();
 }

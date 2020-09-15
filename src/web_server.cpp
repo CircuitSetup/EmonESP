@@ -27,8 +27,6 @@
 #undef ENABLE_DEBUG
 #endif
 
-#include <Arduino.h>
-#include <ESP8266WiFi.h>
 #include <string>
 
 #include "emonesp.h"
@@ -167,8 +165,7 @@ bool isPositive(AsyncWebServerRequest *request, const char *param) {
 // First request will return 0 results unless you start scan from somewhere else (loop/setup)
 // Do not request more often than 3-5 seconds
 // -------------------------------------------------------------------
-void
-handleScan(AsyncWebServerRequest *request) {
+void handleScan(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_JSON)) {
     return;
@@ -236,8 +233,7 @@ handleScan(AsyncWebServerRequest *request) {
 // Handle turning Access point off
 // url: /apoff
 // -------------------------------------------------------------------
-void
-handleAPOff(AsyncWebServerRequest *request) {
+void handleAPOff(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
@@ -255,8 +251,7 @@ handleAPOff(AsyncWebServerRequest *request) {
 // Save selected network to EEPROM and attempt connection
 // url: /savenetwork
 // -------------------------------------------------------------------
-void
-handleSaveNetwork(AsyncWebServerRequest *request) {
+void handleSaveNetwork(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
@@ -283,8 +278,7 @@ handleSaveNetwork(AsyncWebServerRequest *request) {
 // Save Emoncms
 // url: /saveemoncms
 // -------------------------------------------------------------------
-void
-handleSaveEmoncms(AsyncWebServerRequest *request) {
+void handleSaveEmoncms(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
@@ -315,8 +309,7 @@ handleSaveEmoncms(AsyncWebServerRequest *request) {
 // Save MQTT Config
 // url: /savemqtt
 // -------------------------------------------------------------------
-void
-handleSaveMqtt(AsyncWebServerRequest *request) {
+void handleSaveMqtt(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
@@ -337,7 +330,7 @@ handleSaveMqtt(AsyncWebServerRequest *request) {
                    request->arg("pass"));
 
   char tmpStr[200];
-  snprintf(tmpStr, sizeof(tmpStr), "Saved: %s %d %s %s %s %s", mqtt_server.c_str(), port, 
+  snprintf(tmpStr, sizeof(tmpStr), "Saved: %s %d %s %s %s %s", mqtt_server.c_str(), port,
           mqtt_topic.c_str(), mqtt_feed_prefix.c_str(), mqtt_user.c_str(), mqtt_pass.c_str());
   DBUGLN(tmpStr);
 
@@ -350,11 +343,56 @@ handleSaveMqtt(AsyncWebServerRequest *request) {
 }
 
 // -------------------------------------------------------------------
+// Save Calibration Config
+// url: /savecal
+// -------------------------------------------------------------------
+void handleSaveCal(AsyncWebServerRequest *request) {
+  AsyncResponseStream *response;
+  if (false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
+    return;
+  }
+
+#ifdef SOLAR_METER
+  config_save_cal(request->arg("voltage"),
+                  request->arg("ct1"),
+                  request->arg("ct2"),
+                  request->arg("freq"),
+                  request->arg("gain"),
+                  request->arg("svoltage"),
+                  request->arg("sct1"),
+                  request->arg("sct2"));
+
+  char tmpStr[200];
+  snprintf(tmpStr, sizeof(tmpStr), "Saved: %s %s %s %s %s %s %s %s", voltage_cal.c_str(),
+           ct1_cal.c_str(), ct2_cal.c_str(), freq_cal.c_str(), gain_cal.c_str(),
+           svoltage_cal.c_str(), sct1_cal.c_str(), sct2_cal.c_str());
+  DBUGLN(tmpStr);
+#else
+  config_save_cal(request->arg("voltage"),
+                  request->arg("ct1"),
+                  request->arg("ct2"),
+                  request->arg("freq"),
+                  request->arg("gain"));
+
+  char tmpStr[200];
+  snprintf(tmpStr, sizeof(tmpStr), "Saved: %s %s %s %s %s", voltage_cal.c_str(),
+           ct1_cal.c_str(), ct2_cal.c_str(), freq_cal.c_str(), gain_cal.c_str());
+  DBUGLN(tmpStr);
+#endif
+
+  response->setCode(200);
+  response->print(tmpStr);
+  request->send(response);
+
+  // restart the system to load values into energy meter
+  systemRestartTime = millis() + 1000;
+}
+
+// -------------------------------------------------------------------
 // Save the web site user/pass
 // url: /saveadmin
 // -------------------------------------------------------------------
-void
-handleSaveAdmin(AsyncWebServerRequest *request) {
+void handleSaveAdmin(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
@@ -374,8 +412,7 @@ handleSaveAdmin(AsyncWebServerRequest *request) {
 // Save timer
 // url: /savetimer
 // -------------------------------------------------------------------
-void
-handleSaveTimer(AsyncWebServerRequest *request) {
+void handleSaveTimer(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
@@ -393,7 +430,7 @@ handleSaveTimer(AsyncWebServerRequest *request) {
   int qvoltage_output = tmp.toInt();
   tmp = request->arg("time_offset");
   int qtime_offset = tmp.toInt();
-      
+
   config_save_timer(qtimer_start1, qtimer_stop1, qtimer_start2, qtimer_stop2, qvoltage_output, qtime_offset);
 
   mqtt_publish("out/timer",String(qtimer_start1)+" "+String(qtimer_stop1)+" "+String(qtimer_start2)+" "+String(qtimer_stop2)+" "+String(qvoltage_output));
@@ -403,8 +440,7 @@ handleSaveTimer(AsyncWebServerRequest *request) {
   request->send(response);
 }
 
-void
-handleSetVout(AsyncWebServerRequest *request) {
+void handleSetVout(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
@@ -471,8 +507,7 @@ void handleLastValues(AsyncWebServerRequest *request) {
 // Returns status json
 // url: /status
 // -------------------------------------------------------------------
-void
-handleStatus(AsyncWebServerRequest *request) {
+void handleStatus(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response)) {
     return;
@@ -517,8 +552,7 @@ handleStatus(AsyncWebServerRequest *request) {
 // Returns OpenEVSE Config json
 // url: /config
 // -------------------------------------------------------------------
-void
-handleConfigGet(AsyncWebServerRequest *request) {
+void handleConfigGet(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response)) {
     return;
@@ -540,8 +574,7 @@ handleConfigGet(AsyncWebServerRequest *request) {
   request->send(response);
 }
 
-void
-handleConfigPost(AsyncWebServerRequest *request)
+void handleConfigPost(AsyncWebServerRequest *request)
 {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response)) {
@@ -575,15 +608,18 @@ handleConfigPost(AsyncWebServerRequest *request)
 // Reset config and reboot
 // url: /reset
 // -------------------------------------------------------------------
-void
-handleRst(AsyncWebServerRequest *request) {
+void handleRst(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
   }
 
   config_reset();
+  #ifdef ESP32
+  WiFi.disconnect(false, true);
+  #else
   ESPAL.eraseConfig();
+  #endif
 
   response->setCode(200);
   response->print("1");
@@ -596,8 +632,7 @@ handleRst(AsyncWebServerRequest *request) {
 // Restart (Reboot)
 // url: /restart
 // -------------------------------------------------------------------
-void
-handleRestart(AsyncWebServerRequest *request) {
+void handleRestart(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
@@ -615,14 +650,13 @@ handleRestart(AsyncWebServerRequest *request) {
 // url /input
 // e.g http://192.168.0.75/input?string=CT1:3935,CT2:325,T1:12.5,T2:16.9,T3:11.2,T4:34.7
 // -------------------------------------------------------------------
-void
-handleInput(AsyncWebServerRequest *request) {
+void handleInput(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
   }
 
-  input_string = request->arg("string");
+  strcpy(input_string, request->arg("string").c_str());
 
   response->setCode(200);
   response->print(input_string);
@@ -889,9 +923,9 @@ void onEmonTxEvent(AsyncWebSocket * server, AsyncWebSocketClient *client, AwsEve
   }
 }
 
-void streamBuffer(StreamSpyReader &buffer, AsyncWebSocket &client) 
+void streamBuffer(StreamSpyReader &buffer, AsyncWebSocket &client)
 {
-  if(buffer.available() > 0 && client.availableForWriteAll()) 
+  if(buffer.available() > 0 && client.availableForWriteAll())
   {
     uint8_t *buf;
     size_t len;

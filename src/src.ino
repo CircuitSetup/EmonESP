@@ -23,6 +23,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <esp_task_wdt.h>
 #include "emonesp.h"
 #include "app_config.h"
 #include "wifi.h"
@@ -34,6 +35,15 @@
 #include "http.h"
 #include "autoauth.h"
 #include <NTPClient.h>
+
+// See energy meter specific configuration in energy_meter.h
+#define ENABLE_ENERGY_METER
+
+#ifdef ENABLE_ENERGY_METER
+#include "energy_meter.h"
+#endif
+
+static char input[MAX_DATA_LEN];
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP,"europe.pool.ntp.org",time_offset,60000);
@@ -47,6 +57,11 @@ bool last_pushbtn_state = 0;
 // SETUP
 // -------------------------------------------------------------------
 void setup() {
+
+  #ifdef ENABLE_WDT
+  enableLoopWDT();
+  #endif
+
   debug_setup();
 
   DEBUG.println();
@@ -57,11 +72,11 @@ void setup() {
 
   DBUG("Node type: ");
   DBUGLN(node_type);
-  
+
   // Read saved settings from the config
   config_load_settings();
   timeClient.setTimeOffset(time_offset);
-  
+
   DBUG("Node name: ");
   DBUGLN(node_name);
 
@@ -78,7 +93,7 @@ void setup() {
   pinMode(4, OUTPUT);
   #endif
   // ---------------------------------------------------------
-  
+
   // Initial LED on
   led_flash(3000, 100);
 
@@ -96,9 +111,18 @@ void setup() {
   // Start auto auth
   auth_setup();
 
+  #ifdef ENABLE_ENERGY_METER
+  energy_meter_setup();
+  #endif
+
+  #ifdef ENABLE_WDT
+  DEBUG.println("Watchdog timer is enabled.");
+  feedLoopWDT();
+  #endif
+
   // Time
   timeClient.begin();
-  
+
   delay(100);
 } // end setup
 
@@ -114,12 +138,18 @@ void led_flash(int ton, int toff) {
 // -------------------------------------------------------------------
 void loop()
 {
+  #ifdef ENABLE_WDT
+  feedLoopWDT();
+  #endif
   ota_loop();
   web_server_loop();
   wifi_loop();
+  #ifdef ENABLE_ENERGY_METER
+  energy_meter_loop();
+  #endif
   timeClient.update();
 
-  DynamicJsonDocument data(4096);
+  DynamicJsonDocument data(MAX_DATA_LEN);
   boolean gotInput = input_get(data);
 
   if (wifi_client_connected())
@@ -143,12 +173,12 @@ void loop()
 
     // 1. Timer
     int timenow = timeClient.getHours()*100+timeClient.getMinutes();
-    
+
     if (timer_stop1>=timer_start1 && (timenow>=timer_start1 && timenow<timer_stop1)) ctrl_state = 1;
     if (timer_stop2>=timer_start2 && (timenow>=timer_start2 && timenow<timer_stop2)) ctrl_state = 1;
 
     if (timer_stop1<timer_start1 && (timenow>=timer_start1 || timenow<timer_stop1)) ctrl_state = 1;
-    if (timer_stop2<timer_start2 && (timenow>=timer_start2 || timenow<timer_stop2)) ctrl_state = 1;    
+    if (timer_stop2<timer_start2 && (timenow>=timer_start2 || timenow<timer_stop2)) ctrl_state = 1;
 
     // 2. On/Off
     if (ctrl_mode=="On") ctrl_state = 1;
@@ -172,7 +202,7 @@ void loop()
 
     last_pushbtn_state = pushbtn_state;
     pushbtn_state = !digitalRead(0);
-    
+
     if (pushbtn_state && last_pushbtn_state && !pushbtn_action) {
       pushbtn_action = 1;
       if (ctrl_mode=="On") ctrl_mode = "Off"; else ctrl_mode = "On";
@@ -181,7 +211,7 @@ void loop()
     }
     if (!pushbtn_state && !last_pushbtn_state) pushbtn_action = 0;
   }
-  
+
 } // end loop
 
 String getTime() {

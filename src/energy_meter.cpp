@@ -27,22 +27,9 @@
 #include "emonesp.h"
 #include "emoncms.h"
 #include "input.h"
-#include "config.h"
-
-// for ATM90E32 energy meter
-#include <SPI.h>
-#include <ATM90E32.h>
+#include "app_config.h"
 
 #ifdef ENABLE_OLED_DISPLAY
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-
-// Declaration for SSD1306 display connected using software SPI (default case):
-#define OLED_DC     0
-#define OLED_CS     16
-#define OLED_RESET  2 //17
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI, OLED_DC, OLED_RESET, OLED_CS);
 #endif
 
@@ -95,13 +82,10 @@ unsigned long startMillis;
 unsigned long currentMillis;
 
 const int period = 1000; //time interval in ms to send data
-#ifdef SOLAR_METER
+/*Power values are usually only negative when exporting solar power
+  Otherwise a CT may be backwards */
 bool canBeNegative = true;
-#else
-bool canBeNegative = false; //set to true if current and power readings can be negative (like when exporting solar power)
-#endif
 
-char result[200];
 char measurement[16];
 
 ATM90E32 eic{}; //initialize the IC class
@@ -158,6 +142,9 @@ void energy_meter_setup() {
 // -------------------------------------------------------------------
 void energy_meter_loop()
 {
+
+  char * result = input_string;
+
   /*get the current "time" (actually the number of milliseconds since the program started)*/
   currentMillis = millis();
 
@@ -182,12 +169,12 @@ void energy_meter_loop()
   unsigned short en0 = eic.GetMeterStatus0();//EMMIntState0
   unsigned short en1 = eic.GetMeterStatus1();//EMMIntState1
 
-  DBUGS.println("Sys Status: S0:0x" + String(sys0, HEX) + " S1:0x" + String(sys1, HEX));
-  DBUGS.println("Meter Status: E0:0x" + String(en0, HEX) + " E1:0x" + String(en1, HEX));
+  DEBUG.println("Sys Status: S0:0x" + String(sys0, HEX) + " S1:0x" + String(sys1, HEX));
+  DEBUG.println("Meter Status: E0:0x" + String(en0, HEX) + " E1:0x" + String(en1, HEX));
   delay(10);
 
   /*if true the MCU is not getting data from the energy meter */
-  if (sys0 == 65535 || sys0 == 0) DBUGS.println("Error: Not receiving data from energy meter - check your connections");
+  if (sys0 == 65535 || sys0 == 0) DEBUG.println("Error: Not receiving data from energy meter - check your connections");
 
   ////// VOLTAGE
   if (LineFreq == 389) {
@@ -195,12 +182,12 @@ void energy_meter_loop()
     voltageA = eic.GetLineVoltageA()*2;
     voltageC = eic.GetLineVoltageC()*2;
   }
-  else {  
+  else {
     voltageA = eic.GetLineVoltageA();
     voltageC = eic.GetLineVoltageC();
 
-    totalVoltage = voltageA + voltageC;  
-  }   
+    totalVoltage = voltageA + voltageC;
+  }
 
   /////// CURRENT & POWER
   currentCT1 = eic.GetLineCurrentA();
@@ -208,11 +195,11 @@ void energy_meter_loop()
 
   if (LineFreq == 389) {
     //voltage is not changed in the register so this has to be accounted for here as well
-    wattsA = eic.GetActivePowerA()*2; 
+    wattsA = eic.GetActivePowerA()*2;
     wattsC = eic.GetActivePowerC()*2;
   }
   else {
-    wattsA = eic.GetActivePowerA(); 
+    wattsA = eic.GetActivePowerA();
     wattsC = eic.GetActivePowerC();
   }
 
@@ -256,13 +243,13 @@ void energy_meter_loop()
   unsigned short en0s = eic_solar.GetMeterStatus0();//EMMIntState0
   unsigned short en1s = eic_solar.GetMeterStatus1();//EMMIntState1
 
-  DBUGS.println("Solar Sys Status: S0:0x" + String(sys0s, HEX) + " S1:0x" + String(sys1s, HEX));
-  DBUGS.println("Solar Meter Status: E0:0x" + String(en0s, HEX) + " E1:0x" + String(en1s, HEX));
+  DEBUG.println("Solar Sys Status: S0:0x" + String(sys0s, HEX) + " S1:0x" + String(sys1s, HEX));
+  DEBUG.println("Solar Meter Status: E0:0x" + String(en0s, HEX) + " E1:0x" + String(en1s, HEX));
   delay(10);
 
   ////// SOLAR VOLTAGE
   /*if true the MCU is not getting data from the energy meter */
-  if (sys0s == 65535 || sys0s == 0) DBUGS.println("Error: Not receiving data from the solar energy meter - check your connections");
+  if (sys0s == 65535 || sys0s == 0) DEBUG.println("Error: Not receiving data from the solar energy meter - check your connections");
 
   if (LineFreq == 389) {
     //if 50hz then voltage is 240v and needs to be scaled
@@ -273,12 +260,14 @@ void energy_meter_loop()
     solarVoltageA = eic_solar.GetLineVoltageA();
     solarVoltageC = eic_solar.GetLineVoltageC();
 
-    totalSolarVoltage = solarVoltageA + solarVoltageC;   
+    totalSolarVoltage = solarVoltageA + solarVoltageC;
   }
-  
+
   /////// SOLAR CURRENT & POWER
   solarCurrentCT1 = eic_solar.GetLineCurrentA();
   solarCurrentCT2 = eic_solar.GetLineCurrentC();
+
+  totalSolarCurrent = solarCurrentCT1 + solarCurrentCT2;
 
   if (LineFreq == 389) {
     solarWattsA = eic_solar.GetActivePowerA()*2;
@@ -288,7 +277,7 @@ void energy_meter_loop()
     solarWattsA = eic_solar.GetActivePowerA();
     solarWattsC = eic_solar.GetActivePowerC();
   }
-  
+
   /* Is net energy positive or negative?
      We're not reading if current is pos or neg because we're only getting
      the upper 16 bit register. We are getting all 32 bits of active power though */
@@ -298,10 +287,10 @@ void energy_meter_loop()
   if (LineFreq == 389) {
     totalSolarWatts = eic_solar.GetTotalActivePower()*2;
   }
-  else (
+  else {
     totalSolarWatts = eic_solar.GetTotalActivePower(); //all math is already done in the total register
   }
-  
+
 #endif
   /*
     DBUGS.println(" ");
@@ -385,7 +374,7 @@ void energy_meter_loop()
      in the ATM90E32 library
   */
   strcpy(result, "");
-  
+
   if (LineFreq == 389) {
     strcat(result, "totV:");
     dtostrf(voltageA, 2, 2, measurement);
@@ -455,11 +444,11 @@ void energy_meter_loop()
   dtostrf(eic.GetTotalApparentPower(), 2, 4, measurement);
   strcat(result, measurement);
 
-  strcat(result, ",PhaseA:");
+  strcat(result, ",CT1Angle:");
   dtostrf(eic.GetPhaseA(), 2, 2, measurement);
   strcat(result, measurement);
 
-  strcat(result, ",PhaseC:");
+  strcat(result, ",CT2Angle:");
   dtostrf(eic.GetPhaseC(), 2, 2, measurement);
   strcat(result, measurement);
 #endif
@@ -475,8 +464,6 @@ void energy_meter_loop()
   dtostrf(freq, 2, 2, measurement);
   strcat(result, measurement);
 
-  //DBUGS.println(result);
-
-  input_string = result;
+  DEBUG.println(result);
 
 }

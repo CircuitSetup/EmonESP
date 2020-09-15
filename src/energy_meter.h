@@ -26,7 +26,24 @@
 #ifndef _ENERGY_METER
 #define _ENERGY_METER
 
+// for ATM90E32 energy meter
+#include <SPI.h>
+#include <ATM90E32.h>
+
 //#define ENABLE_OLED_DISPLAY
+
+#ifdef ENABLE_OLED_DISPLAY
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for SSD1306 display connected using software SPI (default case):
+#define OLED_DC     0
+#define OLED_CS     16
+#define OLED_RESET  17
+#endif
+
 //#define SOLAR_METER
 
 /*
@@ -56,14 +73,17 @@
    For meter <= v1.3:
       42080 - 9v AC Transformer - Jameco 112336
       32428 - 12v AC Transformer - Jameco 167151
-   For meter > v1.4:
+   For meter = v1.4:
       37106 - 9v AC Transformer - Jameco 157041
       38302 - 9v AC Transformer - Jameco 112336
       29462 - 12v AC Transformer - Jameco 167151
+   For Meters >= v1.4 rev.3
+      3920 - 9v AC Transformer - Jameco 157041
 */
-#define VOLTAGE_GAIN 37106
+#define VOLTAGE_GAIN 3920
 
 /*
+   10170 - SCT-006 20A/25mA
    25498 - SCT-013-000 100A/50mA
    39473 - SCT-016 120A/40mA
    46539 - Magnalab 100A
@@ -72,7 +92,7 @@
 #define CURRENT_GAIN_CT2 39473
 
 #ifdef SOLAR_METER
-#define VOLTAGE_GAIN_SOLAR 37106
+#define VOLTAGE_GAIN_SOLAR 3920
 #define SOLAR_GAIN_CT1 39473
 #define SOLAR_GAIN_CT2 39473
 #endif
