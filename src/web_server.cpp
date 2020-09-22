@@ -33,7 +33,7 @@
 #include "web_server.h"
 #include "web_server_static.h"
 #include "app_config.h"
-#include "wifi.h"
+#include "esp_wifi.h"
 #include "mqtt.h"
 #include "input.h"
 #include "emoncms.h"
@@ -171,63 +171,71 @@ void handleScan(AsyncWebServerRequest *request) {
     return;
   }
 
-#ifndef ENABLE_ASYNC_WIFI_SCAN
-  String json = "[";
-  int n = WiFi.scanComplete();
-  if(n == -2) {
-    WiFi.scanNetworks(true, false);
-  } else if(n) {
-    for (int i = 0; i < n; ++i) {
-      if(i) json += ",";
-      json += "{";
-      json += "\"rssi\":"+String(WiFi.RSSI(i));
-      json += ",\"ssid\":\""+WiFi.SSID(i)+"\"";
-      json += ",\"bssid\":\""+WiFi.BSSIDstr(i)+"\"";
-      json += ",\"channel\":"+String(WiFi.channel(i));
-      json += ",\"secure\":"+String(WiFi.encryptionType(i));
-      json += ",\"hidden\":"+String(WiFi.isHidden(i)?"true":"false");
-      json += "}";
-    }
-    WiFi.scanDelete();
-    if(WiFi.scanComplete() == -2){
-      WiFi.scanNetworks(true);
-    }
-  }
-  json += "]";
-  response->print(json);
-  request->send(response);
-#else // ENABLE_ASYNC_WIFI_SCAN
-  // Async WiFi scan need the Git version of the ESP8266 core
-  if(WIFI_SCAN_RUNNING == WiFi.scanComplete()) {
-    response->setCode(500);
-    response->setContentType(CONTENT_TYPE_TEXT);
-    response->print("Busy");
-    request->send(response);
-    return;
-  }
-
-  DBUGF("Starting WiFi scan");
-  WiFi.scanNetworksAsync([request, response](int networksFound) {
-    DBUGF("%d networks found", networksFound);
+  #ifndef ENABLE_ASYNC_WIFI_SCAN
     String json = "[";
-    for (int i = 0; i < networksFound; ++i) {
-      if(i) json += ",";
-      json += "{";
-      json += "\"rssi\":"+String(WiFi.RSSI(i));
-      json += ",\"ssid\":\""+WiFi.SSID(i)+"\"";
-      json += ",\"bssid\":\""+WiFi.BSSIDstr(i)+"\"";
-      json += ",\"channel\":"+String(WiFi.channel(i));
-      json += ",\"secure\":"+String(WiFi.encryptionType(i));
-      json += ",\"hidden\":"+String(WiFi.isHidden(i)?"true":"false");
-      json += "}";
+    int n = WiFi.scanComplete();
+    if(n == -2) {
+    #ifdef ESP32
+      WiFi.scanNetworks(true, true); //2nd true handles isHidden on ESP32
+    #else
+      WiFi.scanNetworks(true, true);
+    #endif
+    } else if(n) {
+      for (int i = 0; i < n; ++i) {
+        if(i) json += ",";
+        json += "{";
+        json += "\"rssi\":"+String(WiFi.RSSI(i));
+        json += ",\"ssid\":\""+WiFi.SSID(i)+"\"";
+        json += ",\"bssid\":\""+WiFi.BSSIDstr(i)+"\"";
+        json += ",\"channel\":"+String(WiFi.channel(i));
+        json += ",\"secure\":"+String(WiFi.encryptionType(i));
+        #ifndef ESP32
+        json += ",\"hidden\":"+String(WiFi.isHidden(i)?"true":"false");
+        #endif // !ESP32
+        json += "}";
+      }
+      WiFi.scanDelete();
+      if(WiFi.scanComplete() == -2){
+        WiFi.scanNetworks(true);
+      }
     }
-    WiFi.scanDelete();
     json += "]";
     response->print(json);
     request->send(response);
-  }, false);
-#endif
-}
+  #else // ENABLE_ASYNC_WIFI_SCAN
+    // Async WiFi scan need the Git version of the ESP8266 core
+    if(WIFI_SCAN_RUNNING == WiFi.scanComplete()) {
+      response->setCode(500);
+      response->setContentType(CONTENT_TYPE_TEXT);
+      response->print("Busy");
+      request->send(response);
+      return;
+    }
+
+    DBUGF("Starting WiFi scan");
+    WiFi.scanNetworksAsync([request, response](int networksFound) {
+      DBUGF("%d networks found", networksFound);
+      String json = "[";
+      for (int i = 0; i < networksFound; ++i) {
+        if(i) json += ",";
+        json += "{";
+        json += "\"rssi\":"+String(WiFi.RSSI(i));
+        json += ",\"ssid\":\""+WiFi.SSID(i)+"\"";
+        json += ",\"bssid\":\""+WiFi.BSSIDstr(i)+"\"";
+        json += ",\"channel\":"+String(WiFi.channel(i));
+        json += ",\"secure\":"+String(WiFi.encryptionType(i));
+        #ifndef ESP32
+        json += ",\"hidden\":"+String(WiFi.isHidden(i)?"true":"false");
+        #endif
+        json += "}";
+      }
+      WiFi.scanDelete();
+      json += "]";
+      response->print(json);
+      request->send(response);
+    }, false);
+  #endif
+  }
 
 // -------------------------------------------------------------------
 // Handle turning Access point off
@@ -463,8 +471,7 @@ void handleSetVout(AsyncWebServerRequest *request) {
   request->send(response);
 }
 
-void
-handleSetFlowT(AsyncWebServerRequest *request) {
+void handleSetFlowT(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
@@ -549,7 +556,7 @@ void handleStatus(AsyncWebServerRequest *request) {
 }
 
 // -------------------------------------------------------------------
-// Returns OpenEVSE Config json
+// Returns EmonESP Config json
 // url: /config
 // -------------------------------------------------------------------
 void handleConfigGet(AsyncWebServerRequest *request) {
@@ -703,10 +710,11 @@ void handleUpdate(AsyncWebServerRequest *request) {
     return;
   }
 
-
   DBUGLN("UPDATING...");
   delay(500);
 
+  //will not work with ESP32 Update.h
+  #ifdef ESP8266
   t_httpUpdate_return ret = ota_http_update();
 
   int retCode = 400;
@@ -731,14 +739,14 @@ void handleUpdate(AsyncWebServerRequest *request) {
   request->send(response);
 
   DBUGLN(str);
+  #endif
 }
 
 // -------------------------------------------------------------------
 // Update firmware
 // url: /update
 // -------------------------------------------------------------------
-void
-handleUpdateGet(AsyncWebServerRequest *request) {
+void handleUpdateGet(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_HTML)) {
     return;
@@ -753,11 +761,11 @@ handleUpdateGet(AsyncWebServerRequest *request) {
   request->send(response);
 }
 
-void
-handleUpdatePost(AsyncWebServerRequest *request) {
+void handleUpdatePost(AsyncWebServerRequest *request) {
   bool shouldReboot = !Update.hasError();
-  AsyncWebServerResponse *response = request->beginResponse(200, CONTENT_TYPE_TEXT, shouldReboot ? "OK" : "FAIL");
-  response->addHeader("Connection", "close");
+  AsyncWebServerResponse *response = request->beginResponse(200, CONTENT_TYPE_TEXT, shouldReboot ? "Update Complete. Rebooting in 20 seconds." : "Update FAIL");
+  response->addHeader("Refresh", "20");
+  response->addHeader("Location", "/");
   request->send(response);
 
   if(shouldReboot) {
@@ -768,8 +776,7 @@ handleUpdatePost(AsyncWebServerRequest *request) {
 extern "C" uint32_t _SPIFFS_start;
 extern "C" uint32_t _SPIFFS_end;
 
-void
-handleUpdateUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+void handleUpdateUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
   if(!index)
   {
@@ -779,16 +786,23 @@ handleUpdateUpload(AsyncWebServerRequest *request, String filename, size_t index
 
     DBUGVAR(data[0]);
     //int command = data[0] == 0xE9 ? U_FLASH : U_SPIFFS;
-    int command = U_FLASH;
-    size_t updateSize = U_FLASH == command ?
-      (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000 :
-      ((size_t) &_SPIFFS_end - (size_t) &_SPIFFS_start);
+    #ifdef ESP32
+      // if filename includes spiffs, update the spiffs partition
+      int cmd = (filename.indexOf("spiffs") > 0) ? U_SPIFFS : U_FLASH;
 
-    DBUGVAR(command);
-    DBUGVAR(updateSize);
+      if (!Update.begin(UPDATE_SIZE_UNKNOWN, cmd)) {
+    #elif defined(ESP8266)
+      int command = U_FLASH;
+      size_t updateSize = U_FLASH == command ?
+        (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000 :
+        ((size_t) &_SPIFFS_end - (size_t) &_SPIFFS_start);
 
-    Update.runAsync(true);
-    if(!Update.begin(updateSize, command)) {
+      DBUGVAR(command);
+      DBUGVAR(updateSize);
+
+      Update.runAsync(true);
+      if(!Update.begin(updateSize, command)) {
+    #endif
 #ifdef ENABLE_DEBUG
       Update.printError(DEBUG_PORT);
 #endif
@@ -886,9 +900,9 @@ void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_
     DBUGF("BodyStart: %u", total);
     request->_tempObject = new String();
   }
-  String *body = (String *)request->_tempObject;
+  //String *body = (String *)request->_tempObject;
   DBUGF("%.*s", len, (const char*)data);
-  body->concat((const char*)data, len);
+  //body->concat((const char*)data, len);
   if(index + len == total) {
     DBUGF("BodyEnd: %u", total);
   }
@@ -936,8 +950,7 @@ void streamBuffer(StreamSpyReader &buffer, AsyncWebSocket &client)
   }
 }
 
-void
-web_server_setup()
+void web_server_setup()
 {
   // Add the Web Socket server
   ws.onEvent(onWsEvent);
@@ -1000,8 +1013,7 @@ web_server_setup()
   DEBUG.println("Server started");
 }
 
-void
-web_server_loop() {
+void web_server_loop() {
   Profile_Start(web_server_loop);
 
   // Do we need to restart the WiFi?
@@ -1026,14 +1038,22 @@ web_server_loop() {
   if(systemRestartTime > 0 && millis() > systemRestartTime) {
     systemRestartTime = 0;
     wifi_disconnect();
-    ESP.restart();
+    #ifdef ESP32
+      esp_restart();
+    #else
+      ESP.restart();
+    #endif
   }
 
   // Do we need to reboot the system?
   if(systemRebootTime > 0 && millis() > systemRebootTime) {
     systemRebootTime = 0;
     wifi_disconnect();
-    ESP.reset();
+    #ifdef ESP32
+      esp_restart();
+    #else
+      ESP.restart();
+    #endif
   }
 
   streamBuffer(debugBuffer, wsDebug);

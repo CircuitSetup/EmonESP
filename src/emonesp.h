@@ -34,7 +34,7 @@ String getTime();
 
 void setTimeOffset();
 
-//#define ENABLE_WDT
+#define ENABLE_WDT
 
 #ifndef MAX_DATA_LEN
 #define MAX_DATA_LEN 4096
@@ -99,7 +99,7 @@ void setTimeOffset();
 #endif
 
 #ifndef CONTROL_PIN
-#define CONTROL_PIN 14
+#define CONTROL_PIN 10
 #endif
 
 #ifndef CONTROL_PIN_ON_STATE

@@ -1,8 +1,12 @@
 #ifndef _EMONESP_WEB_SERVER_STATIC_H
 #define _EMONESP_WEB_SERVER_STATIC_H
 
+#ifdef ESP32
+#include <AsyncTCP.h>  //https://github.com/me-no-dev/AsyncTCP
+#elif defined(ESP8266)
 #include <Hash.h>
 #include <ESPAsyncTCP.h>
+#endif
 #include <ESPAsyncWebServer.h>
 
 struct StaticFile

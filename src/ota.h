@@ -37,9 +37,9 @@
 #include <FS.h>
 #include <ArduinoOTA.h>               // local OTA update from Arduino IDE
 #ifdef ESP32
-#include <Update.h>        // remote OTA update from server
+#include <Update.h>                   // ESP32 remote OTA update from server
 #elif defined(ESP8266)
-#include <ESP8266httpUpdate.h>        // remote OTA update from server
+#include <ESP8266httpUpdate.h>        // ESP8266 remote OTA update from server
 #endif
 
 

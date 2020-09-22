@@ -26,7 +26,7 @@
 #include "emonesp.h"
 #include "ota.h"
 #include "web_server.h"
-#include "wifi.h"
+#include "esp_wifi.h"
 #include "http.h"
 
 // -------------------------------------------------------------------
@@ -63,8 +63,10 @@ String ota_get_latest_version()
   return get_http(u_host, url);
 }
 
+#ifdef ESP8266
 t_httpUpdate_return ota_http_update()
 {
   t_httpUpdate_return ret = ESPhttpUpdate.update("http://" + String(u_host) + String(u_url) + "?tag=" + currentfirmware);
   return ret;
 }
+#endif

@@ -46,7 +46,7 @@ static char request[MAX_DATA_LEN+100];
 // HTTP or HTTPS GET Request
 // url: N/A
 // -------------------------------------------------------------------
-String get_http(const char * host, const char * url, int port, const char * fingerprint) {
+String get_http(const char * host, String url, int port, const char * fingerprint) {
   WiFiClientSecure * http;
 
   if (fingerprint) {

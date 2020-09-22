@@ -1,15 +1,15 @@
 /*
   Based on: https://github.com/zenmanenergy/ESP8266-Arduino-Examples/blob/master/helloWorld_urlencoded/urlencode.ino
- 
+
   ESP8266 Hello World urlencode by Steve Nelson
   URLEncoding is used all the time with internet urls. This is how urls handle funny characters
   in a URL. For example a space is: %20
- 
+
   These functions simplify the process of encoding and decoding the urlencoded format.
-   
+
   It has been tested on an esp12e (NodeMCU development board)
-  This example code is in the public domain, use it however you want. 
- 
+  This example code is in the public domain, use it however you want.
+
   Prerequisite Examples:
   https://github.com/zenmanenergy/ESP8266-Arduino-Examples/tree/master/helloworld_serial
 
@@ -21,7 +21,7 @@ static unsigned char h2int(char c);
 
 String urldecode(String str)
 {
-    
+
     String encodedString="";
     char c;
     char code0;
@@ -29,7 +29,7 @@ String urldecode(String str)
     for (unsigned int i =0; i < str.length(); i++){
         c=str.charAt(i);
       if (c == '+'){
-        encodedString+=' ';  
+        encodedString+=' ';
       }else if (c == '%') {
         i++;
         code0=str.charAt(i);
@@ -38,13 +38,13 @@ String urldecode(String str)
         c = (h2int(code0) << 4) | h2int(code1);
         encodedString+=c;
       } else{
-        
-        encodedString+=c;  
+
+        encodedString+=c;
       }
-      
+
       yield();
     }
-    
+
    return encodedString;
 }
 
@@ -54,7 +54,7 @@ String urlencode(String str)
     char c;
     char code0;
     char code1;
-    char code2;
+    //char code2;
     for (unsigned int i =0; i < str.length(); i++){
       c=str.charAt(i);
       if (c == ' '){
@@ -71,7 +71,7 @@ String urlencode(String str)
         if (c > 9){
             code0=c - 10 + 'A';
         }
-        code2='\0';
+        //code2='\0';
         encodedString+='%';
         encodedString+=code0;
         encodedString+=code1;
@@ -80,7 +80,7 @@ String urlencode(String str)
       yield();
     }
     return encodedString;
-    
+
 }
 
 static unsigned char h2int(char c)

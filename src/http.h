@@ -47,7 +47,7 @@
 // HTTP or HTTPS GET Request
 // url: N/A
 // -------------------------------------------------------------------
-extern String get_http(const char * host, const char * url, int port=80, const char * fingerprint=NULL);
+extern String get_http(const char * host, String url, int port=80, const char * fingerprint=NULL);
 
 #elif defined(ESP8266)
 // -------------------------------------------------------------------

@@ -26,7 +26,7 @@
 #include <esp_task_wdt.h>
 #include "emonesp.h"
 #include "app_config.h"
-#include "wifi.h"
+#include "esp_wifi.h"
 #include "web_server.h"
 #include "ota.h"
 #include "input.h"
@@ -42,8 +42,6 @@
 #ifdef ENABLE_ENERGY_METER
 #include "energy_meter.h"
 #endif
-
-static char input[MAX_DATA_LEN];
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP,"europe.pool.ntp.org",time_offset,60000);
@@ -67,7 +65,7 @@ void setup() {
   DEBUG.println();
   DEBUG.println();
   DEBUG.print("EmonESP ");
-  DEBUG.println(ESP.getChipId());
+  DEBUG.println(node_name.c_str());
   DEBUG.println("Firmware: " + currentfirmware);
 
   DBUG("Node type: ");

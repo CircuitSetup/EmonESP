@@ -8,7 +8,7 @@
 #include "web_server.h"
 #include "web_server_static.h"
 #include "app_config.h"
-#include "wifi.h"
+#include "esp_wifi.h"
 
 // Static files
 #include "web_static/web_server_static_files.h"

@@ -26,13 +26,14 @@
    Boston, MA 02111-1307, USA.
 */
 #include "emonesp.h"
-#include "wifi.h"
+#include "esp_wifi.h"
 #include "app_config.h"
 
-/*
-DNSServer dnsServer;                  // Create class DNS server, captive portal re-direct
-const byte DNS_PORT = 53;
-*/
+#ifdef ESP8266
+//DNSServer dnsServer;                  // Create class DNS server, captive portal re-direct
+//static bool dnsServerStarted = false;
+//const byte DNS_PORT = 53;
+#endif
 
 // Access Point SSID, password & IP address. SSID will be softAP_ssid + chipID to make SSID unique
 //const char *softAP_ssid = "emonESP";
@@ -102,10 +103,12 @@ void startAP() {
   WiFi.softAP(node_name.c_str(), softAP_password, channel);
   delay(500); // Without delay the IP address is sometimes blank
 
+  #ifdef ESP8266
   // Setup the DNS server redirecting all the domains to the apIP
-  /*dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
-  dnsServer.start(DNS_PORT, "*", apIP);
-  */
+  //dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+  //dnsServerStarted = dnsServer.start(DNS_PORT, "*", apIP);
+  #endif
+
 
 #ifdef ENABLE_WDT
   feedLoopWDT();
@@ -178,6 +181,7 @@ static void wifi_onStationModeGotIP(const WiFiEventStationModeGotIP &event) {
   client_disconnects = 0;
   client_retry = false;
 
+  #ifdef ESP8266
   if (MDNS.begin(node_name.c_str())) {
     MDNS.addService("http", "tcp", 80);
     MDNSResponder::hMDNSService hService = MDNS.addService(NULL, "emonesp", "tcp", 80);
@@ -187,6 +191,7 @@ static void wifi_onStationModeGotIP(const WiFiEventStationModeGotIP &event) {
   } else {
     DEBUG_PORT.println("Failed to start mDNS");
   }
+  #endif
 }
 
 static void wifi_onStationModeDisconnected(const WiFiEventStationModeDisconnected &event) {
@@ -222,8 +227,9 @@ static void wifi_onStationModeDisconnected(const WiFiEventStationModeDisconnecte
   "UNKNOWN");
 
   client_disconnects++;
-
-  MDNS.end();
+  #ifdef ESP8266
+  //MDNS.end();
+  #endif
 }
 
 static void wifi_onAPModeStationConnected(const WiFiEventSoftAPModeStationConnected &event) {
@@ -275,10 +281,10 @@ void WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
     case SYSTEM_EVENT_STA_START:
     {
       DEBUG.println("WiFi client started");
-      if(WiFi.setHostname(esp_hostname)) {
+      if(WiFi.setHostname(node_name.c_str())) {
         DBUGF("Set host name to %s", WiFi.getHostname());
       } else {
-        DBUGF("Setting host name failed: %s", esp_hostname);
+        DBUGF("Setting host name failed: %s", node_name.c_str());
       }
     } break;
     case SYSTEM_EVENT_STA_STOP:
@@ -331,7 +337,6 @@ void WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
       break;
     case SYSTEM_EVENT_AP_START:
     {
-      DEBUG.println("WiFi access point started");
       if(WiFi.softAPsetHostname(esp_hostname)) {
         DBUGF("Set host name to %s", WiFi.softAPgetHostname());
       } else {
@@ -371,10 +376,10 @@ void WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
 
 void wifi_setup() {
 
-#ifdef WIFI_LED
+  #ifdef WIFI_LED
   pinMode(WIFI_LED, OUTPUT);
   digitalWrite(WIFI_LED, wifiLedState);
-#endif
+  #endif
 
   randomSeed(analogRead(0));
 
@@ -408,9 +413,11 @@ void wifi_setup() {
 
   wifi_start();
 
-  if (MDNS.begin(esp_hostname)) {
-    MDNS.addService("http", "tcp", 80);
-  }
+  #ifdef ESP8266
+  //if (MDNS.begin(esp_hostname)) {
+  //  MDNS.addService("http", "tcp", 80);
+  //}
+  #endif
 
   client_retry_time = millis();
 }
@@ -418,10 +425,8 @@ void wifi_setup() {
 void wifi_loop()
 {
   Profile_Start(wifi_loop);
-  
-  bool isClient = wifi_mode_is_sta();
+
   bool isClientOnly = wifi_mode_is_sta_only();
-  bool isAp = wifi_mode_is_ap();
   bool isApOnly = wifi_mode_is_ap_only();
 
   // flash the LED according to what state wifi is in
@@ -566,9 +571,13 @@ void wifi_loop()
   }
 
   //was causing ESP to crash in SoftAP mode
-  //if (isApOnly) dnsServer.processNextRequest(); // Captive portal DNS re-dierct
+  #ifdef ESP8266
+  //if(dnsServerStarted) {
+  //  dnsServer.processNextRequest(); // Captive portal DNS re-dierct
+  //}
+  #endif
 
-Profile_End(wifi_loop, 5);
+  Profile_End(wifi_loop, 5);
 }
 
 void wifi_scan() {
@@ -607,7 +616,10 @@ void wifi_turn_off_ap() {
   if (wifi_mode_is_ap())  {
     DEBUG.println("WiFi turn off AP called");
     WiFi.softAPdisconnect();
+    #ifdef ESP8266
     //dnsServer.stop();
+    //dnsServerStarted = false;
+    #endif
   }
 }
 

@@ -44,6 +44,7 @@ module.exports = {
         "/savenetwork",
         "/saveemoncms",
         "/savemqtt",
+        "/saveconfig",
         "/saveadmin",
         "/savetimer",
         "/reset",

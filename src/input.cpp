@@ -28,8 +28,6 @@
 #include "emoncms.h"
 #include "espal.h"
 
-#include <ESP8266WiFi.h>
-
 char input_string[MAX_DATA_LEN] = "";
 char last_datastr[MAX_DATA_LEN] = "";
 

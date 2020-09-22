@@ -11,7 +11,7 @@
 static int getNodeId()
 {
   #ifdef ESP32
-  unsigned long chip_id = ESP.getEfuseMac()
+  unsigned long chip_id = ESP.getEfuseMac();
   #else
   unsigned long chip_id = ESP.getChipId();
   #endif
@@ -112,7 +112,7 @@ ConfigOpt *opts[] =
   new ConfigOptSecret(mqtt_pass, "emonpimqtt2016", "mqtt_pass", "mp"),
   new ConfigOptDefenition<String>(mqtt_feed_prefix, "", "mqtt_feed_prefix", "mp"),
 
-// MQTT Settings
+// Calibration settings
   new ConfigOptDefenition<String>(voltage_cal, "3920", "voltage_cal", "cv"),
   new ConfigOptDefenition<String>(ct1_cal, "39473", "ct1_cal", "ct1"),
   new ConfigOptDefenition<String>(ct2_cal, "39473", "ct2_cal", "ct2"),
@@ -123,7 +123,6 @@ ConfigOpt *opts[] =
   new ConfigOptDefenition<String>(sct1_cal, "39473", "sct1_cal", "sct1"),
   new ConfigOptDefenition<String>(sct2_cal, "39473", "sct2_cal", "sct2"),
   #endif
-
 
 // Timer Settings
   new ConfigOptDefenition<int>(timer_start1, 0, "timer_start1", "tsr1"),
