@@ -51,6 +51,10 @@ bool pushbtn_action = 0;
 bool pushbtn_state = 0;
 bool last_pushbtn_state = 0;
 
+static uint32_t last_mem = 0;
+static uint32_t start_mem = 0;
+static unsigned long mem_info_update = 0;
+
 // -------------------------------------------------------------------
 // SETUP
 // -------------------------------------------------------------------
@@ -67,6 +71,7 @@ void setup() {
   DEBUG.print("EmonESP ");
   DEBUG.println(node_name.c_str());
   DEBUG.println("Firmware: " + currentfirmware);
+  DEBUG.printf("Free: %d\n", ESP.getFreeHeap());
 
   DBUG("Node type: ");
   DBUGLN(node_type);
@@ -74,6 +79,8 @@ void setup() {
   // Read saved settings from the config
   config_load_settings();
   timeClient.setTimeOffset(time_offset);
+
+  DBUGF("After config_load_settings: %d", ESP.getFreeHeap());
 
   DBUG("Node name: ");
   DBUGLN(node_name);
@@ -97,17 +104,21 @@ void setup() {
 
   // Initialise the WiFi
   wifi_setup();
+  DBUGF("After wifi_setup: %d", ESP.getFreeHeap());
   led_flash(50, 50);
 
   // Bring up the web server
   web_server_setup();
+  DBUGF("After web_server_setup: %d", ESP.getFreeHeap());
   led_flash(50, 50);
 
   // Start the OTA update systems
   ota_setup();
+  DBUGF("After ota_setup: %d", ESP.getFreeHeap());
 
   // Start auto auth
   auth_setup();
+  DBUGF("After auth_setup: %d", ESP.getFreeHeap());
 
   #ifdef ENABLE_ENERGY_METER
   energy_meter_setup();
@@ -120,8 +131,11 @@ void setup() {
 
   // Time
   timeClient.begin();
+  DBUGF("After timeClient.begin: %d", ESP.getFreeHeap());
 
   delay(100);
+
+  start_mem = last_mem = ESP.getFreeHeap();
 } // end setup
 
 void led_flash(int ton, int toff) {
@@ -139,6 +153,17 @@ void loop()
   #ifdef ENABLE_WDT
   feedLoopWDT();
   #endif
+
+  if (millis() > mem_info_update) {
+    mem_info_update = millis() + 2000;
+    uint32_t current = ESP.getFreeHeap();
+    int32_t diff = (int32_t)(last_mem - current);
+    if(diff != 0) {
+      DEBUG.printf("Free memory %u - diff %d %d\n", current, diff, start_mem - current);
+      last_mem = current;
+    }
+  }
+
   ota_loop();
   web_server_loop();
   wifi_loop();
@@ -147,7 +172,7 @@ void loop()
   #endif
   timeClient.update();
 
-  DynamicJsonDocument data(MAX_DATA_LEN);
+  StaticJsonDocument<512> data;
   boolean gotInput = input_get(data);
 
   if (wifi_client_connected())

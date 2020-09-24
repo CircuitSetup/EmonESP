@@ -37,10 +37,11 @@
 #include <Print.h>
 #ifdef ESP32
 #include <WiFiClient.h>         // http GET request
+#include <WiFiClientSecure.h>   // Secure https GET request
 #elif defined(ESP8266)
+#include <WiFiClientSecureBearSSL.h>
 #include <ESP8266HTTPClient.h>
 #endif
-#include <WiFiClientSecure.h>   // Secure https GET request
 
 #ifdef ESP32
 // -------------------------------------------------------------------
@@ -54,13 +55,12 @@ extern String get_http(const char * host, String url, int port=80, const char * 
 // HTTPS SECURE GET Request
 // url: N/A
 // -------------------------------------------------------------------
-extern String get_https(const char* fingerprint, const char* host, String url, int httpsPort);
+extern String get_https(const char* fingerprint, const char* host, String &path, int httpsPort);
 
 // -------------------------------------------------------------------
 // HTTP GET Request
 // url: N/A
 // -------------------------------------------------------------------
-extern String get_http(const char* host, String url);
-#endif
+extern String get_http(const char* host, String &path);
 
 #endif // _EMONESP_HTTP_H
