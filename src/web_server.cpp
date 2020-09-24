@@ -76,26 +76,17 @@ const char _CONTENT_TYPE_SVG[] PROGMEM = "image/svg+xml";
 String currentfirmware = ESCAPEQUOTE(BUILD_TAG);
 
 void dumpRequest(AsyncWebServerRequest *request) {
-#ifdef ENABLE_DEBUG
-  if(request->method() == HTTP_GET) {
-    DBUGF("GET");
-  } else if(request->method() == HTTP_POST) {
-    DBUGF("POST");
-  } else if(request->method() == HTTP_DELETE) {
-    DBUGF("DELETE");
-  } else if(request->method() == HTTP_PUT) {
-    DBUGF("PUT");
-  } else if(request->method() == HTTP_PATCH) {
-    DBUGF("PATCH");
-  } else if(request->method() == HTTP_HEAD) {
-    DBUGF("HEAD");
-  } else if(request->method() == HTTP_OPTIONS) {
-    DBUGF("OPTIONS");
-  } else {
-    DBUGF("UNKNOWN");
-  }
-  DBUGF(" http://%s%s", request->host().c_str(), request->url().c_str());
+  DEBUG_PORT.print((request->method() == HTTP_GET) ? F("GET") :
+                   (request->method() == HTTP_POST) ? F("POST") :
+                   (request->method() == HTTP_DELETE) ? F("DELETE") :
+                   (request->method() == HTTP_PUT) ? F("PUT") :
+                   (request->method() == HTTP_PATCH) ? F("PATCH") :
+                   (request->method() == HTTP_HEAD) ? F("HEAD") :
+                   (request->method() == HTTP_OPTIONS) ? F("OPTIONS") : 
+                   F("UNKNOWN"));
+  DEBUG_PORT.printf_P(PSTR(" http://%s%s\n"), request->host().c_str(), request->url().c_str());
 
+#ifdef ENABLE_DEBUG
   if(request->contentLength()){
     DBUGF("_CONTENT_TYPE: %s", request->contentType().c_str());
     DBUGF("_CONTENT_LENGTH: %u", request->contentLength());
@@ -248,10 +239,10 @@ void handleAPOff(AsyncWebServerRequest *request) {
   }
 
   response->setCode(200);
-  response->print("Turning AP Off");
+  response->print(F("Turning AP Off"));
   request->send(response);
 
-  DBUGLN("Turning AP Off");
+  DBUGLN(F("Turning AP Off"));
   apOffTime = millis() + 1000;
 }
 
@@ -265,18 +256,18 @@ void handleSaveNetwork(AsyncWebServerRequest *request) {
     return;
   }
 
-  String qsid = request->arg("ssid");
-  String qpass = request->arg("pass");
+  String qsid = request->arg(F("ssid"));
+  String qpass = request->arg(F("pass"));
 
   if (qsid != 0) {
     config_save_wifi(qsid, qpass);
 
     response->setCode(200);
-    response->print("saved");
+    response->print(F("saved"));
     wifiRestartTime = millis() + 2000;
   } else {
     response->setCode(400);
-    response->print("No SSID");
+    response->print(F("No SSID"));
   }
 
   request->send(response);
@@ -292,20 +283,20 @@ void handleSaveEmoncms(AsyncWebServerRequest *request) {
     return;
   }
 
-  config_save_emoncms(isPositive(request->arg("enable")),
-                      request->arg("server"),
-                      request->arg("path"),
-                      request->arg("node"),
-                      request->arg("apikey"),
-                      request->arg("fingerprint"));
+  config_save_emoncms(isPositive(request->arg(F("enable"))),
+                      request->arg(F("server")),
+                      request->arg(F("path")),
+                      request->arg(F("node")),
+                      request->arg(F("apikey")),
+                      request->arg(F("fingerprint")));
 
   char tmpStr[200];
-  snprintf(tmpStr, sizeof(tmpStr), "Saved: %s %s %s %s %s",
-           emoncms_server.c_str(),
-           emoncms_path.c_str(),
-           emoncms_node.c_str(),
-           emoncms_apikey.c_str(),
-           emoncms_fingerprint.c_str());
+  snprintf_P(tmpStr, sizeof(tmpStr), PSTR("Saved: %s %s %s %s %s"),
+             emoncms_server.c_str(),
+             emoncms_path.c_str(),
+             emoncms_node.c_str(),
+             emoncms_apikey.c_str(),
+             emoncms_fingerprint.c_str());
   DBUGLN(tmpStr);
 
   response->setCode(200);
@@ -329,16 +320,16 @@ void handleSaveMqtt(AsyncWebServerRequest *request) {
     port = portParm->value().toInt();
   }
 
-  config_save_mqtt(isPositive(request->arg("enable")),
-                   request->arg("server"),
+  config_save_mqtt(isPositive(request->arg(F("enable"))),
+                   request->arg(F("server")),
                    port,
-                   request->arg("topic"),
-                   request->arg("prefix"),
-                   request->arg("user"),
-                   request->arg("pass"));
+                   request->arg(F("topic")),
+                   request->arg(F("prefix")),
+                   request->arg(F("user")),
+                   request->arg(F("pass")));
 
   char tmpStr[200];
-  snprintf(tmpStr, sizeof(tmpStr), "Saved: %s %d %s %s %s %s", mqtt_server.c_str(), port,
+  snprintf_P(tmpStr, sizeof(tmpStr), PSTR("Saved: %s %d %s %s %s %s"), mqtt_server.c_str(), port, 
           mqtt_topic.c_str(), mqtt_feed_prefix.c_str(), mqtt_user.c_str(), mqtt_pass.c_str());
   DBUGLN(tmpStr);
 
@@ -406,13 +397,13 @@ void handleSaveAdmin(AsyncWebServerRequest *request) {
     return;
   }
 
-  String quser = request->arg("user");
-  String qpass = request->arg("pass");
+  String quser = request->arg(F("user"));
+  String qpass = request->arg(F("pass"));
 
   config_save_admin(quser, qpass);
 
   response->setCode(200);
-  response->print("saved");
+  response->print(F("saved"));
   request->send(response);
 }
 
@@ -426,17 +417,17 @@ void handleSaveTimer(AsyncWebServerRequest *request) {
     return;
   }
 
-  String tmp = request->arg("timer_start1");
+  String tmp = request->arg(F("timer_start1"));
   int qtimer_start1 = tmp.toInt();
-  tmp = request->arg("timer_stop1");
+  tmp = request->arg(F("timer_stop1"));
   int qtimer_stop1 = tmp.toInt();
-  tmp = request->arg("timer_start2");
+  tmp = request->arg(F("timer_start2"));
   int qtimer_start2 = tmp.toInt();
-  tmp = request->arg("timer_stop2");
+  tmp = request->arg(F("timer_stop2"));
   int qtimer_stop2 = tmp.toInt();
-  tmp = request->arg("voltage_output");
+  tmp = request->arg(F("voltage_output"));
   int qvoltage_output = tmp.toInt();
-  tmp = request->arg("time_offset");
+  tmp = request->arg(F("time_offset"));
   int qtime_offset = tmp.toInt();
 
   config_save_timer(qtimer_start1, qtimer_stop1, qtimer_start2, qtimer_stop2, qvoltage_output, qtime_offset);
@@ -444,7 +435,7 @@ void handleSaveTimer(AsyncWebServerRequest *request) {
   mqtt_publish("out/timer",String(qtimer_start1)+" "+String(qtimer_stop1)+" "+String(qtimer_start2)+" "+String(qtimer_stop2)+" "+String(qvoltage_output));
 
   response->setCode(200);
-  response->print("saved");
+  response->print(F("saved"));
   request->send(response);
 }
 
@@ -453,10 +444,10 @@ void handleSetVout(AsyncWebServerRequest *request) {
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
   }
-  String tmp = request->arg("val");
+  String tmp = request->arg(F("val"));
   int vout = tmp.toInt();
 
-  tmp = request->arg("save");
+  tmp = request->arg(F("save"));
   int qsave = tmp.toInt();
 
   int save = 0;
@@ -466,8 +457,8 @@ void handleSetVout(AsyncWebServerRequest *request) {
   mqtt_publish("out/vout",String(vout));
 
   response->setCode(200);
-  if (save) response->print("saved");
-  else response->print("ok");
+  if (save) response->print(F("saved"));
+  else response->print(F("ok"));
   request->send(response);
 }
 
@@ -476,11 +467,11 @@ void handleSetFlowT(AsyncWebServerRequest *request) {
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
   }
-  String tmp = request->arg("val");
+  String tmp = request->arg(F("val"));
   float flow = tmp.toFloat();
   int vout = (int) (flow - 7.14)/0.0371;
 
-  tmp = request->arg("save");
+  tmp = request->arg(F("save"));
   int qsave = tmp.toInt();
 
   int save = 0;
@@ -490,8 +481,8 @@ void handleSetFlowT(AsyncWebServerRequest *request) {
   if (mqtt_server!=0) mqtt_publish("out/vout",String(vout));
 
   response->setCode(200);
-  if (save) response->print("saved");
-  else response->print("ok");
+  if (save) response->print(F("saved"));
+  else response->print(F("ok"));
   request->send(response);
 }
 
@@ -524,31 +515,32 @@ void handleStatus(AsyncWebServerRequest *request) {
   DynamicJsonDocument doc(capacity);
 
   if (wifi_mode_is_sta_only()) {
-    doc["mode"] = "STA";
+    doc[F("mode")] = "STA";
   } else if (wifi_mode_is_ap_only()) {
-    doc["mode"] = "AP";
+    doc[F("mode")] = "AP";
   } else if (wifi_mode_is_ap() && wifi_mode_is_sta()) {
-    doc["mode"] = "STA+AP";
+    doc[F("mode")] = "STA+AP";
   }
 
 //  s += "\"networks\":["+st+"],";
 //  s += "\"rssi\":["+rssi+"],";
 
-  doc["wifi_client_connected"] = (int)wifi_client_connected();
-  doc["net_connected"] = (int)wifi_client_connected();
-  doc["srssi"] = WiFi.RSSI();
-  doc["ipaddress"] = ipaddress;
+  doc[F("wifi_client_connected")] = (int)wifi_client_connected();
+  doc[F("net_connected")] = (int)wifi_client_connected();
+  doc[F("srssi")] = WiFi.RSSI();
+  doc[F("ipaddress")] = ipaddress;
 
-  doc["emoncms_connected"] = (int)emoncms_connected;
-  doc["packets_sent"] = packets_sent;
-  doc["packets_success"] = packets_success;
+  doc[F("emoncms_connected")] = (int)emoncms_connected;
+  doc[F("packets_sent")] = packets_sent;
+  doc[F("packets_success")] = packets_success;
 
-  doc["mqtt_connected"] = (int)mqtt_connected();
+  doc[F("mqtt_connected")] = (int)mqtt_connected();
 
-  doc["free_heap"] = ESPAL.getFreeHeap();
-  doc["time"] = getTime();
-  doc["ctrl_mode"] = ctrl_mode;
-  doc["ctrl_state"] = ctrl_state;
+  doc[F("free_heap")] = ESPAL.getFreeHeap();
+  doc[F("time")] = getTime();
+  doc[F("ctrl_mode")] = ctrl_mode;
+  doc[F("ctrl_state")] = ctrl_state;
+  doc[F("ota_update")] = (int)Update.isRunning();
 
   response->setCode(200);
   serializeJson(doc, *response);
@@ -569,10 +561,10 @@ void handleConfigGet(AsyncWebServerRequest *request) {
   DynamicJsonDocument doc(capacity);
 
   // EmonESP Config
-  doc["espflash"] = ESPAL.getFlashChipSize();
-  doc["version"] = currentfirmware;
-  doc["node_description"] = node_description;
-  doc["node_type"] = node_type;
+  doc[F("espflash")] = ESPAL.getFlashChipSize();
+  doc[F("version")] = currentfirmware;
+  doc[F("node_description")] = node_description;
+  doc[F("node_type")] = node_type;
 
   config_serialize(doc, true, false, true);
 
@@ -595,17 +587,17 @@ void handleConfigPost(AsyncWebServerRequest *request)
     if(config_deserialize(*body)) {
       config_commit();
       response->setCode(200);
-      response->print("{\"msg\":\"done\"}");
+      response->print(F("{\"msg\":\"done\"}"));
     } else {
       response->setCode(400);
-      response->print("{\"msg\":\"Could not parse JSON\"}");
+      response->print(F("{\"msg\":\"Could not parse JSON\"}"));
     }
 
     delete body;
     request->_tempObject = NULL;
   } else {
     response->setCode(400);
-    response->print("{\"msg\":\"No Body\"}");
+    response->print(F("{\"msg\":\"No Body\"}"));
   }
 
   request->send(response);
@@ -629,7 +621,7 @@ void handleRst(AsyncWebServerRequest *request) {
   #endif
 
   response->setCode(200);
-  response->print("1");
+  response->print(F("1"));
   request->send(response);
 
   systemRebootTime = millis() + 1000;
@@ -646,7 +638,7 @@ void handleRestart(AsyncWebServerRequest *request) {
 }
 
   response->setCode(200);
-  response->print("1");
+  response->print(F("1"));
   request->send(response);
 
   systemRestartTime = millis() + 1000;
@@ -710,7 +702,8 @@ void handleUpdate(AsyncWebServerRequest *request) {
     return;
   }
 
-  DBUGLN("UPDATING...");
+
+  DBUGLN(F("UPDATING..."));
   delay(500);
 
   //will not work with ESP32 Update.h
@@ -721,17 +714,17 @@ void handleUpdate(AsyncWebServerRequest *request) {
   String str = "Error";
   switch(ret) {
     case HTTP_UPDATE_FAILED:
-      str = "Update failed error (";
+      str = F("Update failed error (");
       str += ESPhttpUpdate.getLastError();
-      str += "): ";
+      str += F("): ");
       str += ESPhttpUpdate.getLastErrorString();
       break;
     case HTTP_UPDATE_NO_UPDATES:
-      str = "No update, running latest firmware";
+      str = F("No update, running latest firmware");
       break;
     case HTTP_UPDATE_OK:
       retCode = 200;
-      str = "Update done!";
+      str = F("Update done!");
       break;
   }
   response->setCode(retCode);
@@ -830,7 +823,7 @@ void handleUpdateUpload(AsyncWebServerRequest *request, String filename, size_t 
 
 void handleDescribe(AsyncWebServerRequest *request) {
   AsyncWebServerResponse *response = request->beginResponse(200, CONTENT_TYPE_TEXT, "smartplug");
-  response->addHeader("Access-Control-Allow-Origin", "*");
+  response->addHeader(F("Access-Control-Allow-Origin"), F("*"));
   request->send(response);
 }
 
@@ -844,7 +837,7 @@ void handleCtrlMode(AsyncWebServerRequest *request) {
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
   }
-  String qmode = request->arg("mode");
+  String qmode = request->arg(F("mode"));
   if (qmode=="On") ctrl_mode = "On";
   if (qmode=="Off") ctrl_mode = "Off";
   if (qmode=="Timer") ctrl_mode = "Timer";
@@ -871,7 +864,7 @@ void handleDebug(AsyncWebServerRequest *request, StreamSpy &spy)
 
 void handleNotFound(AsyncWebServerRequest *request)
 {
-  DBUG("NOT_FOUND: ");
+  DBUG(F("NOT_FOUND: "));
   dumpRequest(request);
 
   if(wifi_mode_is_ap_only()) {
@@ -1010,7 +1003,7 @@ void web_server_setup()
 
   server.begin();
 
-  DEBUG.println("Server started");
+  DEBUG.println(F("Server started"));
 }
 
 void web_server_loop() {

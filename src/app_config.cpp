@@ -86,25 +86,25 @@ ConfigOptDefenition<uint32_t> flagsOpt = ConfigOptDefenition<uint32_t>(flags, 0,
 
 ConfigOpt *opts[] =
 {
-// Wifi Network Strings
+// Wifi Network Strings, 0
   new ConfigOptDefenition<String>(esid, "", "ssid", "ws"),
   new ConfigOptSecret(epass, "", "pass", "wp"),
 
-// Web server authentication (leave blank for none)
+// Web server authentication (leave blank for none), 2
   new ConfigOptDefenition<String>(www_username, "", "www_username", "au"),
   new ConfigOptSecret(www_password, "", "www_password", "ap"),
 
-// Advanced settings
+// Advanced settings, 4
   new ConfigOptDefenition<String>(node_name, node_name_default, "hostname", "hn"),
 
-// EMONCMS SERVER strings
+// EMONCMS SERVER strings, 5
   new ConfigOptDefenition<String>(emoncms_server, "emoncms.org", "emoncms_server", "es"),
   new ConfigOptDefenition<String>(emoncms_path, "", "emoncms_path", "ep"),
   new ConfigOptDefenition<String>(emoncms_node, node_name, "emoncms_node", "en"),
   new ConfigOptSecret(emoncms_apikey, "", "emoncms_apikey", "ea"),
   new ConfigOptDefenition<String>(emoncms_fingerprint, "", "emoncms_fingerprint", "ef"),
 
-// MQTT Settings
+// MQTT Settings, 10
   new ConfigOptDefenition<String>(mqtt_server, "emonpi", "mqtt_server", "ms"),
   new ConfigOptDefenition<int>(mqtt_port, 1883, "mqtt_port", "mpt"),
   new ConfigOptDefenition<String>(mqtt_topic, "emonesp", "mqtt_topic", "mt"),
@@ -135,10 +135,10 @@ ConfigOpt *opts[] =
 
   new ConfigOptDefenition<String>(ctrl_mode, "Off", "ctrl_mode", "cm"),
 
-// Flags
+// Flags, 23
   &flagsOpt,
 
-// Virtual Options
+// Virtual Options, 24
   new ConfigOptVirtualBool(flagsOpt, CONFIG_SERVICE_EMONCMS, CONFIG_SERVICE_EMONCMS, "emoncms_enabled", "ee"),
   new ConfigOptVirtualBool(flagsOpt, CONFIG_SERVICE_MQTT, CONFIG_SERVICE_MQTT, "mqtt_enabled", "me"),
   new ConfigOptVirtualBool(flagsOpt, CONFIG_CTRL_UPDATE, CONFIG_CTRL_UPDATE, "ctrl_update", "ce"),
@@ -178,16 +178,16 @@ void config_changed(String name)
 {
   DBUGF("%s changed", name.c_str());
 
-  if(name == "flags") {
+  if(name.equals(F("flags"))) {
     if(mqtt_connected() != config_mqtt_enabled()) {
       mqtt_restart();
     }
     if(emoncms_connected != config_emoncms_enabled()) {
       emoncms_updated = true;
-    }
-  } else if(name.startsWith("mqtt_")) {
+    } 
+  } else if(name.startsWith(F("mqtt_"))) {
     mqtt_restart();
-  } else if(name.startsWith("emoncms_")) {
+  } else if(name.startsWith(F("emoncms_"))) {
     emoncms_updated = true;
   }
 }
@@ -242,11 +242,11 @@ void config_save_emoncms(bool enable, String server, String path, String node, S
     newflags |= CONFIG_SERVICE_EMONCMS;
   }
 
-  config.set("emoncms_server", server);
-  config.set("emoncms_node", node);
-  config.set("emoncms_apikey", apikey);
-  config.set("emoncms_fingerprint", fingerprint);
-  config.set("flags", newflags);
+  config.set(F("emoncms_server"), server);
+  config.set(F("emoncms_node"), node);
+  config.set(F("emoncms_apikey"), apikey);
+  config.set(F("emoncms_fingerprint"), fingerprint);
+  config.set(F("flags"), newflags);
   config.commit();
 }
 
@@ -257,19 +257,19 @@ void config_save_mqtt(bool enable, String server, int port, String topic, String
     newflags |= CONFIG_SERVICE_MQTT;
   }
 
-  config.set("mqtt_server", server);
-  config.set("mqtt_port", port);
-  config.set("mqtt_topic", topic);
-  config.set("mqtt_prefix", prefix);
-  config.set("mqtt_user", user);
-  config.set("mqtt_pass", pass);
-  config.set("flags", newflags);
+  config.set(F("mqtt_server"), server);
+  config.set(F("mqtt_port"), port);
+  config.set(F("mqtt_topic"), topic);
+  config.set(F("mqtt_prefix"), prefix);
+  config.set(F("mqtt_user"), user);
+  config.set(F("mqtt_pass"), pass);
+  config.set(F("flags"), newflags);
   config.commit();
 }
 
 void config_save_mqtt_server(String server)
 {
-  config.set("mqtt_server", server);
+  config.set(F("mqtt_server"), server);
   config.commit();
 }
 
@@ -280,33 +280,33 @@ void config_save_cal(String voltage, String ct1, String ct2, String freq, String
   )
 #endif
 {
-  config.set("voltage_cal", voltage);
-  config.set("ct1_cal", ct1);
-  config.set("ct2_cal", ct2);
-  config.set("freq_cal", freq);
-  config.set("gain_cal", gain);
+  config.set(F("voltage_cal"), voltage);
+  config.set(F("ct1_cal"), ct1);
+  config.set(F("ct2_cal"), ct2);
+  config.set(F("freq_cal"), freq);
+  config.set(F("gain_cal"), gain);
   #ifdef SOLAR_METER
-  config.set("svoltage_cal", svoltage);
-  config.set("sct1_cal", sct1);
-  config.set("sct2_cal", sct2);
+  config.set(F("svoltage_cal"), svoltage);
+  config.set(F("sct1_cal"), sct1);
+  config.set(F("sct2_cal"), sct2);
   #endif
   config.commit();
 }
 
 void config_save_admin(String user, String pass) {
-  config.set("www_username", user);
-  config.set("www_password", pass);
+  config.set(F("www_username"), user);
+  config.set(F("www_password"), pass);
   config.commit();
 }
 
 void config_save_timer(int start1, int stop1, int start2, int stop2, int qvoltage_output, int qtime_offset)
 {
-  config.set("timer_start1", start1);
-  config.set("timer_stop1", stop1);
-  config.set("timer_start2", start2);
-  config.set("timer_stop2", stop2);
-  config.set("voltage_output", qvoltage_output);
-  config.set("time_offset", qtime_offset);
+  config.set(F("timer_start1"), start1);
+  config.set(F("timer_stop1"), stop1);
+  config.set(F("timer_start2"), start2);
+  config.set(F("timer_stop2"), stop2);
+  config.set(F("voltage_output"), qvoltage_output);
+  config.set(F("time_offset"), qtime_offset);
   config.commit();
 }
 
@@ -315,25 +315,25 @@ void config_save_voltage_output(int qvoltage_output, int save_to_eeprom)
   voltage_output = qvoltage_output;
 
   if (save_to_eeprom) {
-    config.set("voltage_output", qvoltage_output);
+    config.set(F("voltage_output"), qvoltage_output);
     config.commit();
   }
 }
 
 void config_save_advanced(String hostname) {
-  config.set("hostname", hostname);
+  config.set(F("hostname"), hostname);
   config.commit();
 }
 
 void config_save_wifi(String qsid, String qpass)
 {
-  config.set("ssid", qsid);
-  config.set("pass", qpass);
+  config.set(F("ssid"), qsid);
+  config.set(F("pass"), qpass);
   config.commit();
 }
 
 void config_save_flags(uint32_t newFlags) {
-  config.set("flags", newFlags);
+  config.set(F("flags"), newFlags);
   config.commit();
 }
 
