@@ -62,3 +62,4 @@ $RECYCLE.BIN/
 .vscode
 .pio
 node_modules
+gui/package-lock.json

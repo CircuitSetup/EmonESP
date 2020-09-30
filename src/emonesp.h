@@ -26,7 +26,7 @@
 #ifndef _EMONESP_H
 #define _EMONESP_H
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include "debug.h"
 #include "profile.h"
 
@@ -34,7 +34,7 @@ String getTime();
 
 void setTimeOffset();
 
-#define ENABLE_WDT
+//#define ENABLE_WDT
 
 #ifndef MAX_DATA_LEN
 #define MAX_DATA_LEN 4096

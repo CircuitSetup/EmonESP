@@ -1,9 +1,9 @@
+#include "app_config.h"
 #include "emonesp.h"
 #include "espal.h"
 #include "mqtt.h"
 #include "emoncms.h"
 #include "input.h"
-#include "app_config.h"
 
 #define EEPROM_SIZE     4096
 #define CHECKSUM_SEED    128
@@ -145,7 +145,7 @@ ConfigOpt *opts[] =
   new ConfigOptVirtualBool(flagsOpt, CONFIG_CTRL_STATE, CONFIG_CTRL_STATE, "ctrl_state", "cs")
 };
 
-ConfigJson config(opts, sizeof(opts) / sizeof(opts[0]), EEPROM_SIZE);
+ConfigJson appconfig(opts, sizeof(opts) / sizeof(opts[0]), EEPROM_SIZE);
 
 // -------------------------------------------------------------------
 // Reset EEPROM, wipes all settings
@@ -166,9 +166,9 @@ void ResetEEPROM() {
 // -------------------------------------------------------------------
 void config_load_settings()
 {
-  config.onChanged(config_changed);
+  appconfig.onChanged(config_changed);
 
-  if(!config.load()) {
+  if(!appconfig.load()) {
     DBUGF("No JSON config found, trying v1 settings");
     config_load_v1_settings();
   }
@@ -194,44 +194,44 @@ void config_changed(String name)
 
 void config_commit()
 {
-  config.commit();
+  appconfig.commit();
 }
 
 bool config_deserialize(String& json) {
-  return config.deserialize(json.c_str());
+  return appconfig.deserialize(json.c_str());
 }
 
 bool config_deserialize(const char *json)
 {
-  return config.deserialize(json);
+  return appconfig.deserialize(json);
 }
 
 bool config_deserialize(DynamicJsonDocument &doc)
 {
-  return config.deserialize(doc);
+  return appconfig.deserialize(doc);
 }
 
 bool config_serialize(String& json, bool longNames, bool compactOutput, bool hideSecrets)
 {
-  return config.serialize(json, longNames, compactOutput, hideSecrets);
+  return appconfig.serialize(json, longNames, compactOutput, hideSecrets);
 }
 
 bool config_serialize(DynamicJsonDocument &doc, bool longNames, bool compactOutput, bool hideSecrets)
 {
-  return config.serialize(doc, longNames, compactOutput, hideSecrets);
+  return appconfig.serialize(doc, longNames, compactOutput, hideSecrets);
 }
 
 void config_set(const char *name, uint32_t val) {
-  config.set(name, val);
+  appconfig.set(name, val);
 }
 void config_set(const char *name, String val) {
-  config.set(name, val);
+  appconfig.set(name, val);
 }
 void config_set(const char *name, bool val) {
-  config.set(name, val);
+  appconfig.set(name, val);
 }
 void config_set(const char *name, double val) {
-  config.set(name, val);
+  appconfig.set(name, val);
 }
 
 void config_save_emoncms(bool enable, String server, String path, String node, String apikey,
@@ -242,12 +242,12 @@ void config_save_emoncms(bool enable, String server, String path, String node, S
     newflags |= CONFIG_SERVICE_EMONCMS;
   }
 
-  config.set(F("emoncms_server"), server);
-  config.set(F("emoncms_node"), node);
-  config.set(F("emoncms_apikey"), apikey);
-  config.set(F("emoncms_fingerprint"), fingerprint);
-  config.set(F("flags"), newflags);
-  config.commit();
+  appconfig.set(F("emoncms_server"), server);
+  appconfig.set(F("emoncms_node"), node);
+  appconfig.set(F("emoncms_apikey"), apikey);
+  appconfig.set(F("emoncms_fingerprint"), fingerprint);
+  appconfig.set(F("flags"), newflags);
+  appconfig.commit();
 }
 
 void config_save_mqtt(bool enable, String server, int port, String topic, String prefix, String user, String pass)
@@ -257,20 +257,20 @@ void config_save_mqtt(bool enable, String server, int port, String topic, String
     newflags |= CONFIG_SERVICE_MQTT;
   }
 
-  config.set(F("mqtt_server"), server);
-  config.set(F("mqtt_port"), port);
-  config.set(F("mqtt_topic"), topic);
-  config.set(F("mqtt_prefix"), prefix);
-  config.set(F("mqtt_user"), user);
-  config.set(F("mqtt_pass"), pass);
-  config.set(F("flags"), newflags);
-  config.commit();
+  appconfig.set(F("mqtt_server"), server);
+  appconfig.set(F("mqtt_port"), port);
+  appconfig.set(F("mqtt_topic"), topic);
+  appconfig.set(F("mqtt_prefix"), prefix);
+  appconfig.set(F("mqtt_user"), user);
+  appconfig.set(F("mqtt_pass"), pass);
+  appconfig.set(F("flags"), newflags);
+  appconfig.commit();
 }
 
 void config_save_mqtt_server(String server)
 {
-  config.set(F("mqtt_server"), server);
-  config.commit();
+  appconfig.set(F("mqtt_server"), server);
+  appconfig.commit();
 }
 
 void config_save_cal(String voltage, String ct1, String ct2, String freq, String gain
@@ -280,34 +280,34 @@ void config_save_cal(String voltage, String ct1, String ct2, String freq, String
   )
 #endif
 {
-  config.set(F("voltage_cal"), voltage);
-  config.set(F("ct1_cal"), ct1);
-  config.set(F("ct2_cal"), ct2);
-  config.set(F("freq_cal"), freq);
-  config.set(F("gain_cal"), gain);
+  appconfig.set(F("voltage_cal"), voltage);
+  appconfig.set(F("ct1_cal"), ct1);
+  appconfig.set(F("ct2_cal"), ct2);
+  appconfig.set(F("freq_cal"), freq);
+  appconfig.set(F("gain_cal"), gain);
   #ifdef SOLAR_METER
-  config.set(F("svoltage_cal"), svoltage);
-  config.set(F("sct1_cal"), sct1);
-  config.set(F("sct2_cal"), sct2);
+  appconfig.set(F("svoltage_cal"), svoltage);
+  appconfig.set(F("sct1_cal"), sct1);
+  appconfig.set(F("sct2_cal"), sct2);
   #endif
-  config.commit();
+  appconfig.commit();
 }
 
 void config_save_admin(String user, String pass) {
-  config.set(F("www_username"), user);
-  config.set(F("www_password"), pass);
-  config.commit();
+  appconfig.set(F("www_username"), user);
+  appconfig.set(F("www_password"), pass);
+  appconfig.commit();
 }
 
 void config_save_timer(int start1, int stop1, int start2, int stop2, int qvoltage_output, int qtime_offset)
 {
-  config.set(F("timer_start1"), start1);
-  config.set(F("timer_stop1"), stop1);
-  config.set(F("timer_start2"), start2);
-  config.set(F("timer_stop2"), stop2);
-  config.set(F("voltage_output"), qvoltage_output);
-  config.set(F("time_offset"), qtime_offset);
-  config.commit();
+  appconfig.set(F("timer_start1"), start1);
+  appconfig.set(F("timer_stop1"), stop1);
+  appconfig.set(F("timer_start2"), start2);
+  appconfig.set(F("timer_stop2"), stop2);
+  appconfig.set(F("voltage_output"), qvoltage_output);
+  appconfig.set(F("time_offset"), qtime_offset);
+  appconfig.commit();
 }
 
 void config_save_voltage_output(int qvoltage_output, int save_to_eeprom)
@@ -315,29 +315,29 @@ void config_save_voltage_output(int qvoltage_output, int save_to_eeprom)
   voltage_output = qvoltage_output;
 
   if (save_to_eeprom) {
-    config.set(F("voltage_output"), qvoltage_output);
-    config.commit();
+    appconfig.set(F("voltage_output"), qvoltage_output);
+    appconfig.commit();
   }
 }
 
 void config_save_advanced(String hostname) {
-  config.set(F("hostname"), hostname);
-  config.commit();
+  appconfig.set(F("hostname"), hostname);
+  appconfig.commit();
 }
 
 void config_save_wifi(String qsid, String qpass)
 {
-  config.set(F("ssid"), qsid);
-  config.set(F("pass"), qpass);
-  config.commit();
+  appconfig.set(F("ssid"), qsid);
+  appconfig.set(F("pass"), qpass);
+  appconfig.commit();
 }
 
 void config_save_flags(uint32_t newFlags) {
-  config.set(F("flags"), newFlags);
-  config.commit();
+  appconfig.set(F("flags"), newFlags);
+  appconfig.commit();
 }
 
 void config_reset() {
   ResetEEPROM();
-  config.reset();
+  appconfig.reset();
 }

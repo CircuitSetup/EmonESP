@@ -28,7 +28,7 @@
 
 #include <Arduino.h>
 #include <EEPROM.h>             // Save config settings
-#include <ConfigJson.h>
+#include <ConfigJson.h> //https://github.com/jeremypoulter/ConfigJson.git
 #include <ArduinoJson.h>
 
 // -------------------------------------------------------------------

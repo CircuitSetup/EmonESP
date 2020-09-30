@@ -22,7 +22,8 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-
+ 
+#include "autoauth.h"
 #include "emonesp.h"
 #include "app_config.h"
 #include "http.h"
@@ -118,4 +119,3 @@ void auth_loop() {
       }
   }
 }
-

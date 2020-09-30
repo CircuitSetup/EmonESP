@@ -35,7 +35,7 @@ boolean input_get(JsonDocument &data)
 {
   boolean gotLine = false;
   boolean gotData = false;
-  char * line;
+  char line[MAX_DATA_LEN];
 
   // If data from test API e.g `http://<IP-ADDRESS>/input?string=CT1:3935,CT2:325,T1:12.5,T2:16.9,T3:11.2,T4:34.7`
   if(strlen(input_string) > 0) {
@@ -52,7 +52,7 @@ boolean input_get(JsonDocument &data)
     int len = strlen(line);
     if(len > 0)
     {
-      DEBUG.printf_P(PSTR("Got '%s'\n"), line.c_str());
+      //DEBUG.printf_P(PSTR("Got '%s'\n"), line);
 
       for(int i = 0; i < len; i++)
       {

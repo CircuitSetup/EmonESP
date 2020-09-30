@@ -169,7 +169,7 @@ void handleScan(AsyncWebServerRequest *request) {
     #ifdef ESP32
       WiFi.scanNetworks(true, true); //2nd true handles isHidden on ESP32
     #else
-      WiFi.scanNetworks(true, true);
+      WiFi.scanNetworks(true, false);
     #endif
     } else if(n) {
       for (int i = 0; i < n; ++i) {
