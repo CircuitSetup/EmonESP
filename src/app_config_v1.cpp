@@ -4,6 +4,7 @@
  * -------------------------------------------------------------------
  * Adaptation of Chris Howells OpenEVSE ESP Wifi
  * by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * Modified to use with the CircuitSetup.us energy meters by jdeglavina
  * All adaptation GNU General Public License as below.
  *
  * -------------------------------------------------------------------
@@ -33,11 +34,11 @@
 #define EEPROM_ESID_SIZE              32
 #define EEPROM_EPASS_SIZE             64
 #define EEPROM_EMON_API_KEY_SIZE      32
-#define EEPROM_EMON_SERVER_SIZE       45
+#define EEPROM_EMON_SERVER_SIZE       32
 #define EEPROM_EMON_PATH_SIZE         16
 #define EEPROM_EMON_NODE_SIZE         32
-#define EEPROM_MQTT_SERVER_SIZE       45
-#define EEPROM_MQTT_PORT_SIZE          2
+#define EEPROM_MQTT_SERVER_SIZE       32
+#define EEPROM_MQTT_PORT_SIZE         2
 #define EEPROM_MQTT_TOPIC_SIZE        32
 #define EEPROM_MQTT_USER_SIZE         32
 #define EEPROM_MQTT_PASS_SIZE         64
@@ -45,14 +46,23 @@
 #define EEPROM_MQTT_FEED_PREFIX_SIZE  10
 #define EEPROM_WWW_USER_SIZE          16
 #define EEPROM_WWW_PASS_SIZE          16
-#define EEPROM_TIMER_START1_SIZE       2
-#define EEPROM_TIMER_STOP1_SIZE        2
-#define EEPROM_TIMER_START2_SIZE       2
-#define EEPROM_TIMER_STOP2_SIZE        2
-#define EEPROM_VOLTAGE_OUTPUT_SIZE     2
-#define EEPROM_TIME_OFFSET_SIZE        2
-// TOTAL SIZE:                    589
-#define EEPROM_SIZE                   512
+#define EEPROM_CAL_VOLTAGE_SIZE       6
+#define EEPROM_CAL_CT1_SIZE           6
+#define EEPROM_CAL_CT2_SIZE           6
+#define EEPROM_CAL_FREQ_SIZE          6
+#define EEPROM_CAL_GAIN_SIZE          6
+#ifdef SOLAR_METER
+#define EEPROM_CAL_SVOLTAGE_SIZE      6
+#define EEPROM_CAL_SCT1_SIZE          6
+#define EEPROM_CAL_SCT2_SIZE          6
+#endif
+#define EEPROM_TIMER_START1_SIZE      2
+#define EEPROM_TIMER_STOP1_SIZE       2
+#define EEPROM_TIMER_START2_SIZE      2
+#define EEPROM_TIMER_STOP2_SIZE       2
+#define EEPROM_VOLTAGE_OUTPUT_SIZE    2
+#define EEPROM_TIME_OFFSET_SIZE       2
+#define EEPROM_SIZE                   1024
 
 #define EEPROM_ESID_START             0
 #define EEPROM_ESID_END               (EEPROM_ESID_START + EEPROM_ESID_SIZE)
@@ -99,6 +109,32 @@
 
 #define EEPROM_TIME_OFFSET_START      EEPROM_VOLTAGE_OUTPUT_END
 #define EEPROM_TIME_OFFSET_END        (EEPROM_TIME_OFFSET_START + EEPROM_TIME_OFFSET_SIZE)
+
+#define EEPROM_CAL_VOLTAGE_START  EEPROM_TIME_OFFSET_END
+#define EEPROM_CAL_VOLTAGE_END    (EEPROM_CAL_VOLTAGE_START + EEPROM_CAL_VOLTAGE_SIZE)
+#define EEPROM_CAL_CT1_START   EEPROM_CAL_VOLTAGE_END
+#define EEPROM_CAL_CT1_END     (EEPROM_CAL_CT1_START + EEPROM_CAL_CT1_SIZE)
+#define EEPROM_CAL_CT2_START    EEPROM_CAL_CT1_END
+#define EEPROM_CAL_CT2_END      (EEPROM_CAL_CT2_START + EEPROM_CAL_CT2_SIZE)
+#define EEPROM_CAL_FREQ_START    EEPROM_CAL_CT2_END
+#define EEPROM_CAL_FREQ_END      (EEPROM_CAL_FREQ_START + EEPROM_CAL_FREQ_SIZE)
+#define EEPROM_CAL_GAIN_START    EEPROM_CAL_FREQ_END
+#define EEPROM_CAL_GAIN_END      (EEPROM_CAL_GAIN_START + EEPROM_CAL_GAIN_SIZE)
+#ifdef SOLAR_METER
+#define EEPROM_CAL_SVOLTAGE_START EEPROM_CAL_GAIN_END
+#define EEPROM_CAL_SVOLTAGE_END   (EEPROM_CAL_SVOLTAGE_START + EEPROM_CAL_SVOLTAGE_SIZE)
+#define EEPROM_CAL_SCT1_START     EEPROM_CAL_SVOLTAGE_END
+#define EEPROM_CAL_SCT1_END       (EEPROM_CAL_SCT1_START + EEPROM_CAL_SCT1_SIZE)
+#define EEPROM_CAL_SCT2_START     EEPROM_CAL_SCT1_END
+#define EEPROM_CAL_SCT2_END       (EEPROM_CAL_SCT2_START + EEPROM_CAL_SCT2_SIZE)
+#define EEPROM_CONFIG_END         EEPROM_CAL_SCT2_END
+#else
+#define EEPROM_CONFIG_END         EEPROM_CAL_GAIN_END
+#endif
+
+#if EEPROM_CONFIG_END > EEPROM_SIZE
+#error EEPROM_SIZE too small
+#endif
 
 int read_offset = 0;
 
@@ -178,10 +214,22 @@ void config_load_v1_settings()
     flags |= CONFIG_SERVICE_MQTT;
   }
 
+  // Calibration settings
+  EEPROM_read_string(EEPROM_CAL_VOLTAGE_START, EEPROM_CAL_VOLTAGE_SIZE, voltage_cal);
+  EEPROM_read_string(EEPROM_CAL_CT1_START, EEPROM_CAL_CT1_SIZE, ct1_cal);
+  EEPROM_read_string(EEPROM_CAL_CT2_START, EEPROM_CAL_CT2_SIZE, ct2_cal);
+  EEPROM_read_string(EEPROM_CAL_FREQ_START, EEPROM_CAL_FREQ_SIZE, freq_cal);
+  EEPROM_read_string(EEPROM_CAL_GAIN_START, EEPROM_CAL_GAIN_SIZE, gain_cal);
+#ifdef SOLAR_METER
+  EEPROM_read_string(EEPROM_CAL_SVOLTAGE_START, EEPROM_CAL_SVOLTAGE_SIZE, svoltage_cal);
+  EEPROM_read_string(EEPROM_CAL_SCT1_START, EEPROM_CAL_SCT1_SIZE, sct1_cal);
+  EEPROM_read_string(EEPROM_CAL_SCT2_START, EEPROM_CAL_SCT2_SIZE, sct2_cal);
+#endif
+
   // Web server credentials
   EEPROM_read_string(EEPROM_WWW_USER_START, EEPROM_WWW_USER_SIZE, www_username);
   EEPROM_read_string(EEPROM_WWW_PASS_START, EEPROM_WWW_PASS_SIZE, www_password);
-
+  
   // Read timer settings
   EEPROM_read_int(EEPROM_TIMER_START1_START, timer_start1);
   EEPROM_read_int(EEPROM_TIMER_STOP1_START, timer_stop1);
@@ -191,4 +239,6 @@ void config_load_v1_settings()
   EEPROM_read_int(EEPROM_VOLTAGE_OUTPUT_START, voltage_output);
   
   EEPROM_read_int(EEPROM_TIME_OFFSET_START, time_offset);
+
+  EEPROM.end();
 }

@@ -155,7 +155,7 @@ function WiFiConfigViewModel(baseEndpoint, config, status, scan) {
         // Wait for a new WiFi connection
         self.wifiConnecting(true);
 
-        // And indiccate the save was successful
+        // And indicate the save was successful
         self.saveNetworkSuccess(true);
       }).fail(function () {
         alert("Failed to save WiFi config");

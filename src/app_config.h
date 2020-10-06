@@ -4,6 +4,7 @@
  * -------------------------------------------------------------------
  * Adaptation of Chris Howells OpenEVSE ESP Wifi
  * by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * Modified to use with the CircuitSetup.us energy meters by jdeglavina
  * All adaptation GNU General Public License as below.
  *
  * -------------------------------------------------------------------
@@ -79,7 +80,7 @@ extern String sct1_cal;
 extern String sct2_cal;
 #endif
 
-// Timer Settings
+// Timer Settings 
 extern int timer_start1;
 extern int timer_stop1;
 extern int timer_start2;
@@ -115,7 +116,6 @@ inline bool config_ctrl_update() {
 inline bool config_ctrl_state() {
   return CONFIG_CTRL_STATE == (flags & CONFIG_CTRL_STATE);
 }
-
 // -------------------------------------------------------------------
 // Load saved settings
 // -------------------------------------------------------------------
@@ -148,15 +148,15 @@ extern void config_save_cal(String voltage, String ct1, String ct2, String freq,
 extern void config_save_admin(String user, String pass);
 
 // -------------------------------------------------------------------
-// Save the admin/web interface details
+// Save the timer interface details
 // -------------------------------------------------------------------
 extern void config_save_timer(int start1, int stop1, int start2, int stop2, int voltage_output, int qtime_offset);
 extern void config_save_voltage_output(int qvoltage_output, int save_to_eeprom);
+
 // -------------------------------------------------------------------
 // Save the Wifi details
 // -------------------------------------------------------------------
 extern void config_save_wifi(String qsid, String qpass);
-
 
 // -------------------------------------------------------------------
 // Reset the config back to defaults

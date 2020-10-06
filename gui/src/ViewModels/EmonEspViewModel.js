@@ -144,7 +144,7 @@ function EmonEspViewModel(baseHost, basePort, baseProtocol) {
       self.saveAdminFetching(false);
     });
   };
-  
+
   // -----------------------------------------------------------------------
   // Event: Timer save
   // -----------------------------------------------------------------------
@@ -208,7 +208,7 @@ function EmonEspViewModel(baseHost, basePort, baseProtocol) {
       alert("Please enter Emoncms server and node");
     } else if (emoncms.apikey.length != 32 && !self.emoncmsApiKey.isDummy()) {
       alert("Please enter valid Emoncms apikey");
-    } else if (emoncms.fingerprint !== "" && emoncms.fingerprint.length != 59) {
+    } else if (emoncms.fingerprint != "" && emoncms.fingerprint.length != 59) {
       alert("Please enter valid SSL SHA-1 fingerprint");
     } else {
       self.saveEmonCmsFetching(true);
@@ -239,7 +239,7 @@ function EmonEspViewModel(baseHost, basePort, baseProtocol) {
       pass: self.config.mqtt_pass()
     };
 
-    if (mqtt.server === "") {
+    if (mqtt.enable && mqtt.server === "") {
       alert("Please enter MQTT server");
     } else {
       self.saveMqttFetching(true);
@@ -252,6 +252,35 @@ function EmonEspViewModel(baseHost, basePort, baseProtocol) {
         self.saveMqttFetching(false);
       });
     }
+  };
+  // -----------------------------------------------------------------------
+  // Event: Calibration save
+  // -----------------------------------------------------------------------
+  self.saveCalFetching = ko.observable(false);
+  self.saveCalSuccess = ko.observable(false);
+  self.saveCal = function () {
+	var cal = {
+		voltage: self.config.voltage_cal(), 
+		ct1: self.config.ct1_cal(), 
+		ct2: self.config.ct2_cal(),
+		freq: self.config.freq_cal(), 
+		gain: self.config.gain_cal()
+    };
+	if (isNaN(cal.voltage) || isNaN(cal.ct1) || isNaN(cal.ct2) || isNaN(cal.freq) || isNaN(cal.gain)) {
+		alert("Please enter a number for calibration values");
+	} else if (cal.voltage > 65535 || cal.ct1 > 65535 || cal.ct2 > 65535) {
+		alert("Please enter calibration settings less than 65535");
+    } else {
+		self.saveCalFetching(true);
+		self.saveCalSuccess(false);
+	  $.post(baseEndpoint + "/savecal", cal, function (data) {
+		  self.saveCalSuccess(true);
+		}).fail(function () {
+		  alert("Failed to save calibration config");
+		}).always(function () {
+		  self.saveCalFetching(false);
+		});
+	}
   };
 }
 

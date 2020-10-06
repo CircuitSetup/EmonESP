@@ -4,6 +4,7 @@
  * -------------------------------------------------------------------
  * Adaptation of Chris Howells OpenEVSE ESP Wifi
  * by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * Modified to use with the CircuitSetup.us energy meters by jdeglavina
  * All adaptation GNU General Public License as below.
  *
  * -------------------------------------------------------------------
@@ -23,7 +24,9 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#ifdef ENABLE_WDT
 #include <esp_task_wdt.h>
+#endif
 #include "emonesp.h"
 #include "app_config.h"
 #include "esp_wifi.h"
@@ -35,13 +38,8 @@
 #include "http.h"
 #include "autoauth.h"
 #include <NTPClient.h>
-
-// See energy meter specific configuration in energy_meter.h
-#define ENABLE_ENERGY_METER
-
-#ifdef ENABLE_ENERGY_METER
 #include "energy_meter.h"
-#endif
+// See energy meter specific configuration in energy_meter.h
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP,"europe.pool.ntp.org",time_offset,60000);
@@ -120,18 +118,16 @@ void setup() {
   auth_setup();
   DBUGF("After auth_setup: %d", ESP.getFreeHeap());
 
-  #ifdef ENABLE_ENERGY_METER
+    // Time
+  timeClient.begin();
+  DBUGF("After timeClient.begin: %d", ESP.getFreeHeap());
+
   energy_meter_setup();
-  #endif
 
   #ifdef ENABLE_WDT
   DEBUG.println("Watchdog timer is enabled.");
   feedLoopWDT();
   #endif
-
-  // Time
-  timeClient.begin();
-  DBUGF("After timeClient.begin: %d", ESP.getFreeHeap());
 
   delay(100);
 
@@ -167,16 +163,13 @@ void loop()
   ota_loop();
   web_server_loop();
   wifi_loop();
-  #ifdef ENABLE_ENERGY_METER
-  energy_meter_loop();
-  #endif
   timeClient.update();
+  energy_meter_loop();
 
   StaticJsonDocument<512> data;
   boolean gotInput = input_get(data);
 
-  if (wifi_client_connected())
-  {
+  if (wifi_client_connected()) {
     mqtt_loop();
     if(gotInput) {
       emoncms_publish(data);
@@ -196,12 +189,12 @@ void loop()
 
     // 1. Timer
     int timenow = timeClient.getHours()*100+timeClient.getMinutes();
-
+    
     if (timer_stop1>=timer_start1 && (timenow>=timer_start1 && timenow<timer_stop1)) ctrl_state = 1;
     if (timer_stop2>=timer_start2 && (timenow>=timer_start2 && timenow<timer_stop2)) ctrl_state = 1;
 
     if (timer_stop1<timer_start1 && (timenow>=timer_start1 || timenow<timer_stop1)) ctrl_state = 1;
-    if (timer_stop2<timer_start2 && (timenow>=timer_start2 || timenow<timer_stop2)) ctrl_state = 1;
+    if (timer_stop2<timer_start2 && (timenow>=timer_start2 || timenow<timer_stop2)) ctrl_state = 1;    
 
     // 2. On/Off
     if (ctrl_mode=="On") ctrl_state = 1;
@@ -219,6 +212,7 @@ void loop()
     analogWrite(VOLTAGE_OUT_PIN, voltage_output);
     #endif
   }
+  
   // --------------------------------------------------------------
   if ((millis()-last_pushbtn_check)>100) {
     last_pushbtn_check = millis();

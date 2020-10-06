@@ -1,39 +1,36 @@
 /*
-   -------------------------------------------------------------------
-   EmonESP Serial to Emoncms gateway
-   -------------------------------------------------------------------
-   Adaptation of Chris Howells OpenEVSE ESP Wifi
-   by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * -------------------------------------------------------------------
+ * EmonESP Serial to Emoncms gateway
+ * -------------------------------------------------------------------
+ * Adaptation of Chris Howells OpenEVSE ESP Wifi
+ * by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * Modified to use with the CircuitSetup.us energy meters by jdeglavina
+ * All adaptation GNU General Public License as below.
+ *
+ * -------------------------------------------------------------------
+ *
+ * This file is part of OpenEnergyMonitor.org project.
+ * EmonESP is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3, or (at your option)
+ * any later version.
+ * EmonESP is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with EmonESP; see the file COPYING.  If not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
 
-   Modified to use with the CircuitSetup.us Split Phase Energy Meter by jdeglavina
-
-   All adaptation GNU General Public License as below.
-
-   -------------------------------------------------------------------
-
-   This file is part of OpenEnergyMonitor.org project.
-   EmonESP is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
-   EmonESP is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-   You should have received a copy of the GNU General Public License
-   along with EmonESP; see the file COPYING.  If not, write to the
-   Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-   Boston, MA 02111-1307, USA.
-*/
 #include "emonesp.h"
 #include "esp_wifi.h"
 #include "app_config.h"
 
-#ifdef ESP8266
-//DNSServer dnsServer;                  // Create class DNS server, captive portal re-direct
-//static bool dnsServerStarted = false;
-//const byte DNS_PORT = 53;
-#endif
+DNSServer dnsServer;                  // Create class DNS server, captive portal re-direct
+static bool dnsServerStarted = false;
+const byte DNS_PORT = 53;
 
 // Access Point SSID, password & IP address. SSID will be softAP_ssid + chipID to make SSID unique
 //const char *softAP_ssid = "emonESP";
@@ -92,27 +89,28 @@ void startAP() {
 
   wifi_scan();
   delay(100);
-  WiFi.enableAP(true);
-  delay(100);
-  WiFi.softAPConfig(apIP, apIP, netMsk);
+  #ifdef ESP32
+  WiFi.persistent(false); //workaround for bug that causes a crash if a connection to wifi is lost and ESP32 has to go into AP mode
+  #endif
+  //WiFi.enableAP(true); not needed since WiFi.mode(WIFI_AP) calls this
+  WiFi.mode(WIFI_AP);
+  delay(500); // Without delay the IP address is sometimes blank
 
   // Create Unique SSID e.g "emonESP_XXXXXX"
   // String softAP_ssid_ID = String(softAP_ssid) + "_" + String(node_id);
   // Pick a random channel out of 1, 6 or 11
   int channel = (random(3) * 5) + 1;
   WiFi.softAP(node_name.c_str(), softAP_password, channel);
-  delay(500); // Without delay the IP address is sometimes blank
-
-  #ifdef ESP8266
+  delay(100);
+  WiFi.softAPConfig(apIP, apIP, netMsk);
+  
   // Setup the DNS server redirecting all the domains to the apIP
-  //dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
-  //dnsServerStarted = dnsServer.start(DNS_PORT, "*", apIP);
-  #endif
+  dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+  dnsServerStarted = dnsServer.start(DNS_PORT, "*", apIP);
 
-
-#ifdef ENABLE_WDT
+  #ifdef ENABLE_WDT
   feedLoopWDT();
-#endif
+  #endif
 
   IPAddress myIP = WiFi.softAPIP();
   char tmpStr[40];
@@ -127,25 +125,36 @@ void startAP() {
 // Start Client, attempt to connect to Wifi network
 // -------------------------------------------------------------------
 void startClient() {
-  DBUGF("Connecting to SSID: ",esid.c_str());
+  DEBUG.print(F("Connecting to SSID: "));
+  DEBUG.println(esid.c_str());
   // DEBUG.print(" epass:");
   // DEBUG.println(epass.c_str());
 
   //turn off LED while doing wifi things
-#ifdef WIFI_LED
+  #ifdef WIFI_LED
   digitalWrite(WIFI_LED, LOW);
-#endif
+  #endif
 
-#ifndef ESP32
+  DEBUG.println(WiFi.dnsIP());
+  WiFi.config(WiFi.localIP(), WiFi.gatewayIP(), WiFi.subnetMask(), IPAddress(8,8,8,8)); 
+  delay(10);
+  DEBUG.println(WiFi.dnsIP());
+
+  #ifdef ESP8266
   WiFi.hostname(node_name.c_str());
-#endif
+  #else
+  WiFi.persistent(false); //workaround for bug that causes a crash if a connection to wifi is lost
+  WiFi.setHostname(node_name.c_str());
+  #endif
 
+  WiFi.begin(esid.c_str(), epass.c_str());
   WiFi.enableSTA(true);
   delay(100);
-  WiFi.begin(esid.c_str(), epass.c_str());
-#ifdef ENABLE_WDT
+
+  #ifdef ENABLE_WDT
   feedLoopWDT();
-#endif
+  #endif
+
   WiFi.waitForConnectResult(); //yields until wifi connects or not
 
   delay(50);
@@ -181,17 +190,17 @@ static void wifi_onStationModeGotIP(const WiFiEventStationModeGotIP &event) {
   client_disconnects = 0;
   client_retry = false;
 
-  #ifdef ESP8266
   if (MDNS.begin(node_name.c_str())) {
     MDNS.addService("http", "tcp", 80);
+    #ifdef ESP8266 //uses LEA mDNS
     MDNSResponder::hMDNSService hService = MDNS.addService(NULL, "emonesp", "tcp", 80);
     if(hService) {
       MDNS.addServiceTxt(hService, "node_type", node_type.c_str());
     }
+    #endif
   } else {
     DEBUG_PORT.println("Failed to start mDNS");
   }
-  #endif
 }
 
 static void wifi_onStationModeDisconnected(const WiFiEventStationModeDisconnected &event) {
@@ -227,9 +236,7 @@ static void wifi_onStationModeDisconnected(const WiFiEventStationModeDisconnecte
   "UNKNOWN");
 
   client_disconnects++;
-  #ifdef ESP8266
-  //MDNS.end();
-  #endif
+  MDNS.end();
 }
 
 static void wifi_onAPModeStationConnected(const WiFiEventSoftAPModeStationConnected &event) {
@@ -571,11 +578,11 @@ void wifi_loop()
   }
 
   //was causing ESP to crash in SoftAP mode
-  #ifdef ESP8266
-  //if(dnsServerStarted) {
-  //  dnsServer.processNextRequest(); // Captive portal DNS re-dierct
-  //}
-  #endif
+  //#ifdef ESP8266
+  if(dnsServerStarted) {
+    dnsServer.processNextRequest(); // Captive portal DNS re-dierct
+  }
+  //#endif
 
   Profile_End(wifi_loop, 5);
 }
@@ -616,10 +623,10 @@ void wifi_turn_off_ap() {
   if (wifi_mode_is_ap())  {
     DEBUG.println("WiFi turn off AP called");
     WiFi.softAPdisconnect();
-    #ifdef ESP8266
-    //dnsServer.stop();
-    //dnsServerStarted = false;
-    #endif
+    //#ifdef ESP8266
+    dnsServer.stop();
+    dnsServerStarted = false;
+    //#endif
   }
 }
 

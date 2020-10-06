@@ -4,6 +4,7 @@
  * -------------------------------------------------------------------
  * Adaptation of Chris Howells OpenEVSE ESP Wifi
  * by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * Modified to use with the CircuitSetup.us energy meters by jdeglavina
  * All adaptation GNU General Public License as below.
  *
  * -------------------------------------------------------------------
@@ -22,6 +23,7 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+
 #include "app_config.h"
 #include "emonesp.h"
 #include "ota.h"

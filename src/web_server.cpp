@@ -4,6 +4,7 @@
  * -------------------------------------------------------------------
  * Adaptation of Chris Howells OpenEVSE ESP Wifi
  * by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * Modified to use with the CircuitSetup.us energy meters by jdeglavina
  * All adaptation GNU General Public License as below.
  *
  * -------------------------------------------------------------------
@@ -28,7 +29,6 @@
 #endif
 
 #include <string>
-
 #include "emonesp.h"
 #include "web_server.h"
 #include "web_server_static.h"
@@ -45,7 +45,6 @@
 AsyncWebServer server(80);          // Create class for Web server
 AsyncWebSocket ws("/ws");
 AsyncWebSocket wsDebug("/debug/console");
-AsyncWebSocket wsEmonTx("/emontx/console");
 StaticFileWebHandler staticFile;
 
 StreamSpyReader emonTxBuffer;
@@ -429,7 +428,7 @@ void handleSaveTimer(AsyncWebServerRequest *request) {
   int qvoltage_output = tmp.toInt();
   tmp = request->arg(F("time_offset"));
   int qtime_offset = tmp.toInt();
-
+      
   config_save_timer(qtimer_start1, qtimer_stop1, qtimer_start2, qtimer_stop2, qvoltage_output, qtime_offset);
 
   mqtt_publish("out/timer",String(qtimer_start1)+" "+String(qtimer_stop1)+" "+String(qtimer_start2)+" "+String(qtimer_stop2)+" "+String(qvoltage_output));
@@ -702,7 +701,6 @@ void handleUpdate(AsyncWebServerRequest *request) {
     return;
   }
 
-
   DBUGLN(F("UPDATING..."));
   delay(500);
 
@@ -759,6 +757,7 @@ void handleUpdatePost(AsyncWebServerRequest *request) {
   AsyncWebServerResponse *response = request->beginResponse(200, CONTENT_TYPE_TEXT, shouldReboot ? "Update Complete. Rebooting in 20 seconds." : "Update FAIL");
   response->addHeader("Refresh", "20");
   response->addHeader("Location", "/");
+  response->addHeader("Connection", "close");
   request->send(response);
 
   if(shouldReboot) {
@@ -769,10 +768,8 @@ void handleUpdatePost(AsyncWebServerRequest *request) {
 extern "C" uint32_t _SPIFFS_start;
 extern "C" uint32_t _SPIFFS_end;
 
-void handleUpdateUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
-{
-  if(!index)
-  {
+void handleUpdateUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+  if(!index) {
     dumpRequest(request);
 
     DBUGF("Update Start: %s", filename.c_str());
@@ -801,16 +798,14 @@ void handleUpdateUpload(AsyncWebServerRequest *request, String filename, size_t 
 #endif
     }
   }
-  if(!Update.hasError())
-  {
+  if(!Update.hasError()) {
     if(Update.write(data, len) != len) {
 #ifdef ENABLE_DEBUG
       Update.printError(DEBUG_PORT);
 #endif
     }
   }
-  if(final)
-  {
+  if(final) {
     if(Update.end(true)) {
       DBUGF("Update Success: %uB\n", index+len);
     } else {
@@ -924,12 +919,6 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient *client, AwsEventTy
   }
 }
 
-void onEmonTxEvent(AsyncWebSocket * server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
-  if(type == WS_EVT_DATA) {
-    EMONTX_PORT.write(data, len);
-  }
-}
-
 void streamBuffer(StreamSpyReader &buffer, AsyncWebSocket &client)
 {
   if(buffer.available() > 0 && client.availableForWriteAll())
@@ -947,11 +936,9 @@ void web_server_setup()
 {
   // Add the Web Socket server
   ws.onEvent(onWsEvent);
-  wsEmonTx.onEvent(onEmonTxEvent);
 
   server.addHandler(&ws);
   server.addHandler(&wsDebug);
-  server.addHandler(&wsEmonTx);
   server.addHandler(&staticFile);
 
   // Handle status updates
@@ -992,11 +979,6 @@ void web_server_setup()
     handleDebug(request, SerialDebug);
   });
   debugBuffer.attach(SerialDebug);
-
-  server.on("/emontx", [](AsyncWebServerRequest *request) {
-    handleDebug(request, SerialEmonTx);
-  });
-  emonTxBuffer.attach(SerialEmonTx);
 
   server.onNotFound(handleNotFound);
   server.onRequestBody(handleBody);
@@ -1050,7 +1032,6 @@ void web_server_loop() {
   }
 
   streamBuffer(debugBuffer, wsDebug);
-  streamBuffer(emonTxBuffer, wsEmonTx);
 
   Profile_End(web_server_loop, 5);
 }

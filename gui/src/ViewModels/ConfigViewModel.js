@@ -1,7 +1,7 @@
 function ConfigViewModel() {
   BaseViewModel.call(this, {
     "node_name": "emonESP",
-    "node_description":"WiFi Emoncms Link",
+    "node_description":"WiFi Emoncms Link for CircuitSetup Energy Meters",
     "node_type": "",
     "ssid": "",
     "pass": "",
@@ -20,6 +20,11 @@ function ConfigViewModel() {
     "mqtt_pass": "",
     "www_username": "",
     "www_password": "",
+    "voltage_cal": "",
+	"ct1_cal": "",
+	"ct2_cal": "",
+	"freq_cal": "",
+	"gain_cal": "",
     "espflash": "",
     "version": "0.0.0",
     "timer_start1":"",
@@ -29,53 +34,52 @@ function ConfigViewModel() {
     "voltage_output":"",
     "time_offset":""
   }, baseEndpoint + "/config");
-  
+
   this.f_timer_start1 = ko.pureComputed({
-      read: function () {
-          return addcolon(this.timer_start1());
-      },
-      write: function (value) {
-          this.timer_start1(value.replace(":",""));
-      },
-      owner: this
-  });
-  this.f_timer_stop1 = ko.pureComputed({
-      read: function () {
-          return addcolon(this.timer_stop1());
-      },
-      write: function (value) {
-          this.timer_stop1(value.replace(":",""));
-      },
-      owner: this
-  });
-  this.f_timer_start2 = ko.pureComputed({
-      read: function () {
-          return addcolon(this.timer_start2());
-      },
-      write: function (value) {
-          this.timer_start2(value.replace(":",""));
-      },
-      owner: this
-  });
-  this.f_timer_stop2 = ko.pureComputed({
-      read: function () {
-          return addcolon(this.timer_stop2());
-      },
-      write: function (value) {
-          this.timer_stop2(value.replace(":",""));
-      },
-      owner: this
-  });
-  this.flowT = ko.pureComputed({
-      read: function () {
-          return (this.voltage_output()*0.0371)+7.14;
-      },
-      write: function (value) {
-          this.voltage_output((value-7.14)/0.0371);
-      },
-      owner: this
-  });
-  
+    read: function () {
+        return addcolon(this.timer_start1());
+    },
+    write: function (value) {
+        this.timer_start1(value.replace(":",""));
+    },
+    owner: this
+    });
+    this.f_timer_stop1 = ko.pureComputed({
+        read: function () {
+            return addcolon(this.timer_stop1());
+        },
+        write: function (value) {
+            this.timer_stop1(value.replace(":",""));
+        },
+        owner: this
+    });
+    this.f_timer_start2 = ko.pureComputed({
+        read: function () {
+            return addcolon(this.timer_start2());
+        },
+        write: function (value) {
+            this.timer_start2(value.replace(":",""));
+        },
+        owner: this
+    });
+    this.f_timer_stop2 = ko.pureComputed({
+        read: function () {
+            return addcolon(this.timer_stop2());
+        },
+        write: function (value) {
+            this.timer_stop2(value.replace(":",""));
+        },
+        owner: this
+    });
+    this.flowT = ko.pureComputed({
+        read: function () {
+            return (this.voltage_output()*0.0371)+7.14;
+        },
+        write: function (value) {
+            this.voltage_output((value-7.14)/0.0371);
+        },
+        owner: this
+    });
 }
 ConfigViewModel.prototype = Object.create(BaseViewModel.prototype);
 ConfigViewModel.prototype.constructor = ConfigViewModel;

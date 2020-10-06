@@ -4,6 +4,7 @@
  * -------------------------------------------------------------------
  * Adaptation of Chris Howells OpenEVSE ESP Wifi
  * by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * Modified to use with the CircuitSetup.us energy meters by jdeglavina
  * All adaptation GNU General Public License as below.
  *
  * -------------------------------------------------------------------
@@ -29,12 +30,12 @@
 #include <Arduino.h>
 #ifdef ESP32
 #include <WiFi.h>
-//#include <ESPmDNS.h>              // Resolve URL for update server etc.
+#include <ESPmDNS.h>              // Resolve URL for update server etc.
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
-//#include <ESP8266mDNS.h>              // Resolve URL for update server etc.
-//#include <DNSServer.h>                // Required for captive portal
+#include <ESP8266mDNS.h>              // Resolve URL for update server etc.
 #endif
+#include <DNSServer.h>                // Required for captive portal
 
 
 #ifdef ESP32

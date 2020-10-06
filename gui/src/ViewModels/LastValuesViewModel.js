@@ -35,7 +35,7 @@ function LastValuesViewModel() {
             let value = parsed[key];
             var units = "";
 
-            if (key.startsWith("CT")) units = " W";
+            if (key.startsWith("CT")) units = " A";
             if (key.startsWith("P")) units = " W";
             if (key.startsWith("E")) units = " Wh";
             if (key.startsWith("V")) units = " V";

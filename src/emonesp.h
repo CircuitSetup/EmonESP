@@ -4,6 +4,7 @@
  * -------------------------------------------------------------------
  * Adaptation of Chris Howells OpenEVSE ESP Wifi
  * by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * Modified to use with the CircuitSetup.us energy meters by jdeglavina
  * All adaptation GNU General Public License as below.
  *
  * -------------------------------------------------------------------
@@ -55,7 +56,7 @@ void setTimeOffset();
 #define WIFI_LED_ON_TIME 50
 #endif
 
-//times the LED is off...
+//time the LED is off in AP mode...
 #ifndef WIFI_LED_AP_TIME
 #define WIFI_LED_AP_TIME 2000
 #endif
@@ -99,7 +100,7 @@ void setTimeOffset();
 #endif
 
 #ifndef CONTROL_PIN
-#define CONTROL_PIN 10
+#define CONTROL_PIN 13
 #endif
 
 #ifndef CONTROL_PIN_ON_STATE
@@ -107,11 +108,11 @@ void setTimeOffset();
 #endif
 
 #ifndef NODE_TYPE
-#define NODE_TYPE "espwifi"
+#define NODE_TYPE "emonesp"
 #endif
 
 #ifndef NODE_DESCRIPTION
-#define NODE_DESCRIPTION "WiFi EmonCMS Link"
+#define NODE_DESCRIPTION "WiFi EmonCMS Link for CircuitSetup Energy Meters"
 #endif
 
 #endif // _EMONESP_H

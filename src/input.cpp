@@ -4,6 +4,7 @@
  * -------------------------------------------------------------------
  * Adaptation of Chris Howells OpenEVSE ESP Wifi
  * by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * Modified to use with the CircuitSetup.us energy meters by jdeglavina
  * All adaptation GNU General Public License as below.
  *
  * -------------------------------------------------------------------
@@ -44,18 +45,11 @@ boolean input_get(JsonDocument &data)
     gotLine = true;
   }
 
-  if(gotLine)
-  {
-    // Get rid of any whitespace, newlines etc
-    //line.trim();
-
+  if(gotLine) {
     int len = strlen(line);
-    if(len > 0)
-    {
+    if(len > 0) {
       //DEBUG.printf_P(PSTR("Got '%s'\n"), line);
-
-      for(int i = 0; i < len; i++)
-      {
+      for(int i = 0; i < len; i++) {
         String name = "";
 
         // Get the name
@@ -76,8 +70,7 @@ boolean input_get(JsonDocument &data)
         DBUGVAR(name);
         DBUGVAR(value);
 
-        if(name.length() > 0 && value.length() > 0)
-        {
+        if(name.length() > 0 && value.length() > 0) {
           // IMPROVE: check that value is only a number, toDouble() will skip white space and and chars after the number
           data[name] = value.toDouble();
           gotData = true;

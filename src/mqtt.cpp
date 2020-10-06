@@ -4,6 +4,7 @@
  * -------------------------------------------------------------------
  * Adaptation of Chris Howells OpenEVSE ESP Wifi
  * by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * Modified to use with the CircuitSetup.us energy meters by jdeglavina
  * All adaptation GNU General Public License as below.
  *
  * -------------------------------------------------------------------
@@ -27,12 +28,7 @@
 #include "esp_wifi.h"
 #include "mqtt.h"
 #include "app_config.h"
-
 #include "espal.h"
-
-#include <Arduino.h>
-#include <PubSubClient.h>             // MQTT https://github.com/knolleary/pubsubclient PlatformIO lib: 89
-#include <WiFiClient.h>
 
 WiFiClient espClient;                 // Create client for MQTT
 PubSubClient mqttclient(espClient);   // Create client for MQTT

@@ -1,3 +1,29 @@
+/*
+ * -------------------------------------------------------------------
+ * EmonESP Serial to Emoncms gateway
+ * -------------------------------------------------------------------
+ * Adaptation of Chris Howells OpenEVSE ESP Wifi
+ * by Trystan Lea, Glyn Hudson, OpenEnergyMonitor
+ * Modified to use with the CircuitSetup.us energy meters by jdeglavina
+ * All adaptation GNU General Public License as below.
+ *
+ * -------------------------------------------------------------------
+ *
+ * This file is part of OpenEnergyMonitor.org project.
+ * EmonESP is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3, or (at your option)
+ * any later version.
+ * EmonESP is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with EmonESP; see the file COPYING.  If not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
+
 #include "app_config.h"
 #include "emonesp.h"
 #include "espal.h"
@@ -64,7 +90,7 @@ String sct1_cal = "";
 String sct2_cal = "";
 #endif
 
-// Timer Settings
+// Timer Settings 
 int timer_start1 = 0;
 int timer_stop1 = 0;
 int timer_start2 = 0;
@@ -76,7 +102,6 @@ String ctrl_mode = "Off";
 bool ctrl_update = 0;
 bool ctrl_state = 0;
 int time_offset = 0;
-
 
 uint32_t flags;
 
@@ -124,7 +149,7 @@ ConfigOpt *opts[] =
   new ConfigOptDefenition<String>(sct2_cal, "39473", "sct2_cal", "sct2"),
   #endif
 
-// Timer Settings
+// Timer Settings, 16
   new ConfigOptDefenition<int>(timer_start1, 0, "timer_start1", "tsr1"),
   new ConfigOptDefenition<int>(timer_stop1, 0, "timer_stop1", "tsp1"),
   new ConfigOptDefenition<int>(timer_start2, 0, "timer_start2", "tsr2"),
@@ -164,8 +189,7 @@ void ResetEEPROM() {
 // -------------------------------------------------------------------
 // Load saved settings from EEPROM
 // -------------------------------------------------------------------
-void config_load_settings()
-{
+void config_load_settings() {
   appconfig.onChanged(config_changed);
 
   if(!appconfig.load()) {
@@ -174,8 +198,7 @@ void config_load_settings()
   }
 }
 
-void config_changed(String name)
-{
+void config_changed(String name) {
   DBUGF("%s changed", name.c_str());
 
   if(name.equals(F("flags"))) {
@@ -192,8 +215,7 @@ void config_changed(String name)
   }
 }
 
-void config_commit()
-{
+void config_commit() {
   appconfig.commit();
 }
 
@@ -201,23 +223,19 @@ bool config_deserialize(String& json) {
   return appconfig.deserialize(json.c_str());
 }
 
-bool config_deserialize(const char *json)
-{
+bool config_deserialize(const char *json) {
   return appconfig.deserialize(json);
 }
 
-bool config_deserialize(DynamicJsonDocument &doc)
-{
+bool config_deserialize(DynamicJsonDocument &doc) {
   return appconfig.deserialize(doc);
 }
 
-bool config_serialize(String& json, bool longNames, bool compactOutput, bool hideSecrets)
-{
+bool config_serialize(String& json, bool longNames, bool compactOutput, bool hideSecrets) {
   return appconfig.serialize(json, longNames, compactOutput, hideSecrets);
 }
 
-bool config_serialize(DynamicJsonDocument &doc, bool longNames, bool compactOutput, bool hideSecrets)
-{
+bool config_serialize(DynamicJsonDocument &doc, bool longNames, bool compactOutput, bool hideSecrets) {
   return appconfig.serialize(doc, longNames, compactOutput, hideSecrets);
 }
 
@@ -235,8 +253,7 @@ void config_set(const char *name, double val) {
 }
 
 void config_save_emoncms(bool enable, String server, String path, String node, String apikey,
-                    String fingerprint)
-{
+                    String fingerprint) {
   uint32_t newflags = flags & ~CONFIG_SERVICE_EMONCMS;
   if(enable) {
     newflags |= CONFIG_SERVICE_EMONCMS;
@@ -250,8 +267,7 @@ void config_save_emoncms(bool enable, String server, String path, String node, S
   appconfig.commit();
 }
 
-void config_save_mqtt(bool enable, String server, int port, String topic, String prefix, String user, String pass)
-{
+void config_save_mqtt(bool enable, String server, int port, String topic, String prefix, String user, String pass) {
   uint32_t newflags = flags & ~CONFIG_SERVICE_MQTT;
   if(enable) {
     newflags |= CONFIG_SERVICE_MQTT;
@@ -267,8 +283,7 @@ void config_save_mqtt(bool enable, String server, int port, String topic, String
   appconfig.commit();
 }
 
-void config_save_mqtt_server(String server)
-{
+void config_save_mqtt_server(String server) {
   appconfig.set(F("mqtt_server"), server);
   appconfig.commit();
 }
@@ -299,8 +314,7 @@ void config_save_admin(String user, String pass) {
   appconfig.commit();
 }
 
-void config_save_timer(int start1, int stop1, int start2, int stop2, int qvoltage_output, int qtime_offset)
-{
+void config_save_timer(int start1, int stop1, int start2, int stop2, int qvoltage_output, int qtime_offset) {
   appconfig.set(F("timer_start1"), start1);
   appconfig.set(F("timer_stop1"), stop1);
   appconfig.set(F("timer_start2"), start2);
@@ -310,10 +324,9 @@ void config_save_timer(int start1, int stop1, int start2, int stop2, int qvoltag
   appconfig.commit();
 }
 
-void config_save_voltage_output(int qvoltage_output, int save_to_eeprom)
-{
+void config_save_voltage_output(int qvoltage_output, int save_to_eeprom) {
   voltage_output = qvoltage_output;
-
+  
   if (save_to_eeprom) {
     appconfig.set(F("voltage_output"), qvoltage_output);
     appconfig.commit();
@@ -325,8 +338,7 @@ void config_save_advanced(String hostname) {
   appconfig.commit();
 }
 
-void config_save_wifi(String qsid, String qpass)
-{
+void config_save_wifi(String qsid, String qpass) {
   appconfig.set(F("ssid"), qsid);
   appconfig.set(F("pass"), qpass);
   appconfig.commit();
