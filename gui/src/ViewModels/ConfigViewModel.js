@@ -1,7 +1,7 @@
 function ConfigViewModel() {
   BaseViewModel.call(this, {
     "node_name": "emonESP",
-    "node_description":"WiFi Emoncms Link for CircuitSetup Energy Meters",
+    "node_description":"WiFi EmonCMS Link for CircuitSetup Energy Meters",
     "node_type": "",
     "ssid": "",
     "pass": "",

@@ -204,11 +204,11 @@ function EmonEspViewModel(baseHost, basePort, baseProtocol) {
       fingerprint: self.config.emoncms_fingerprint()
     };
 
-    if (emoncms.server === "" || emoncms.node === "") {
+    if (emoncms.enable == 1 && (emoncms.server === "" || emoncms.node === "")) {
       alert("Please enter Emoncms server and node");
-    } else if (emoncms.apikey.length != 32 && !self.emoncmsApiKey.isDummy()) {
+    } else if (emoncms.server != "" && emoncms.apikey.length != 32 && !self.emoncmsApiKey.isDummy()) {
       alert("Please enter valid Emoncms apikey");
-    } else if (emoncms.fingerprint != "" && emoncms.fingerprint.length != 59) {
+    } else if (emoncms.server != "" && emoncms.fingerprint != "" && emoncms.fingerprint.length != 59) {
       alert("Please enter valid SSL SHA-1 fingerprint");
     } else {
       self.saveEmonCmsFetching(true);
@@ -239,7 +239,7 @@ function EmonEspViewModel(baseHost, basePort, baseProtocol) {
       pass: self.config.mqtt_pass()
     };
 
-    if (mqtt.enable && mqtt.server === "") {
+    if (mqtt.enable == 1 && mqtt.server === "") {
       alert("Please enter MQTT server");
     } else {
       self.saveMqttFetching(true);
