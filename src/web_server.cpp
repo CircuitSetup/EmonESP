@@ -350,33 +350,40 @@ void handleSaveCal(AsyncWebServerRequest *request) {
     return;
   }
 
-#ifdef SOLAR_METER
-  config_save_cal(request->arg("voltage"),
-                  request->arg("ct1"),
-                  request->arg("ct2"),
-                  request->arg("freq"),
-                  request->arg("gain"),
-                  request->arg("svoltage"),
-                  request->arg("sct1"),
-                  request->arg("sct2"));
+  String tmp = request->arg(F("voltage"));
+  int qvoltage = tmp.toInt();
+  tmp = request->arg(F("ct1"));
+  int qct1 = tmp.toInt();
+  tmp = request->arg(F("ct2"));
+  int qct2 = tmp.toInt();
+  tmp = request->arg(F("freq"));
+  int qfreq = tmp.toInt();
+  tmp = request->arg(F("gain"));
+  int qgain= tmp.toInt();
+  #ifdef SOLAR_METER
+  tmp = request->arg(F("svoltage"));
+  int qsvoltage = tmp.toInt();
+  tmp = request->arg(F("sct1"));
+  int qsct1 = tmp.toInt();
+  tmp = request->arg(F("sct2"));
+  int qsct2 = tmp.toInt();
+  #endif
+  
+  #ifdef SOLAR_METER
+  config_save_cal(qvoltage, qct1, qct2, qfreq, qgain, qsvoltage, qsct1, qsct2);
 
   char tmpStr[200];
-  snprintf(tmpStr, sizeof(tmpStr), "Saved: %s %s %s %s %s %s %s %s", voltage_cal.c_str(),
-           ct1_cal.c_str(), ct2_cal.c_str(), freq_cal.c_str(), gain_cal.c_str(),
-           svoltage_cal.c_str(), sct1_cal.c_str(), sct2_cal.c_str());
+  snprintf(tmpStr, sizeof(tmpStr), "Saved: %d %d %d %d %d %d %d %d", voltage_cal,
+           ct1_cal, ct2_cal, freq_cal, gain_cal, svoltage_cal, sct1_cal, sct2_cal);
   DBUGLN(tmpStr);
-#else
-  config_save_cal(request->arg("voltage"),
-                  request->arg("ct1"),
-                  request->arg("ct2"),
-                  request->arg("freq"),
-                  request->arg("gain"));
+  #else
+  config_save_cal(qvoltage, qct1, qct2, qfreq, qgain);
 
   char tmpStr[200];
-  snprintf(tmpStr, sizeof(tmpStr), "Saved: %s %s %s %s %s", voltage_cal.c_str(),
-           ct1_cal.c_str(), ct2_cal.c_str(), freq_cal.c_str(), gain_cal.c_str());
+  snprintf(tmpStr, sizeof(tmpStr), "Saved: %d %d %d %d %d", voltage_cal,
+           ct1_cal, ct2_cal, freq_cal, gain_cal);
   DBUGLN(tmpStr);
-#endif
+  #endif
 
   response->setCode(200);
   response->print(tmpStr);
@@ -486,7 +493,7 @@ void handleSetFlowT(AsyncWebServerRequest *request) {
 }
 
 // -------------------------------------------------------------------
-// Last values on atmega serial
+// Last values on ESP serial
 // url: /lastvalues
 // -------------------------------------------------------------------
 void handleLastValues(AsyncWebServerRequest *request) {

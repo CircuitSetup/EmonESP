@@ -44,7 +44,7 @@ module.exports = {
         "/savenetwork",
         "/saveemoncms",
         "/savemqtt",
-        "/saveconfig",
+        "/savecal",
         "/saveadmin",
         "/savetimer",
         "/reset",
@@ -61,16 +61,14 @@ module.exports = {
         "/upload",
         "/firmware",
         "/update",
-        "/debug",
-        "/emontx"
+        "/debug"
       ],
       target: emonespEndpoint
     },
     {
       context: [
         "/ws",
-        "/debug/console",
-        "/emontx/console"
+        "/debug/console"
       ],
       target: emonespEndpoint,
       ws: true
@@ -98,12 +96,6 @@ module.exports = {
     new HtmlWebpackPlugin({
       filename: "term.html",
       template: "./src/term.html",
-      inject: false,
-      minify: htmlMinify
-    }),
-    new HtmlWebpackPlugin({
-      filename: "split_term.html",
-      template: "./src/split_term.html",
       inject: false,
       minify: htmlMinify
     }),

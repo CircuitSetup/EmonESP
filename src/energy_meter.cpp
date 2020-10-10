@@ -98,11 +98,11 @@ ATM90E32 eic_solar {};
 void energy_meter_setup() {
 
   /*Get values from web interface and assign them if populated*/
-  if (voltage_cal.toInt() > 0) VoltageGain = voltage_cal.toInt();
-  if (ct1_cal.toInt() > 0) CurrentGainCT1 = ct1_cal.toInt();
-  if (ct2_cal.toInt() > 0) CurrentGainCT2 = ct2_cal.toInt();
-  if (freq_cal.toInt() > 0) LineFreq = freq_cal.toInt();
-  if (gain_cal.toInt() > 0) PGAGain = gain_cal.toInt();
+  if (voltage_cal > 0) VoltageGain = voltage_cal;
+  if (ct1_cal > 0) CurrentGainCT1 = ct1_cal;
+  if (ct2_cal > 0) CurrentGainCT2 = ct2_cal;
+  if (freq_cal > 0) LineFreq = freq_cal;
+  if (gain_cal > 0) PGAGain = gain_cal;
 
   /*Initialise the ATM90E32 & Pass CS pin and calibrations to its library -
     the 2nd (B) current channel is not used with the split phase meter */
@@ -111,9 +111,9 @@ void energy_meter_setup() {
   delay(1000);
 
 #ifdef SOLAR_METER
-  if (svoltage_cal.toInt() > 0) VoltageGainSolar = svoltage_cal.toInt();
-  if (sct1_cal.toInt() > 0) SolarGainCT1 = sct1_cal.toInt();
-  if (sct2_cal.toInt() > 0) SolarGainCT2 = sct2_cal.toInt();
+  if (svoltage_cal > 0) VoltageGainSolar = svoltage_cal;
+  if (sct1_cal > 0) SolarGainCT1 = sct1_cal;
+  if (sct2_cal > 0) SolarGainCT2 = sct2_cal;
 
   eic_solar.begin(CS_solar_pin, LineFreq, PGAGain, VoltageGainSolar, SolarGainCT1, 0, SolarGainCT2);
 #endif

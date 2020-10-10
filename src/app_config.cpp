@@ -34,8 +34,7 @@
 #define EEPROM_SIZE     4096
 #define CHECKSUM_SEED    128
 
-static int getNodeId()
-{
+static int getNodeId() {
   #ifdef ESP32
   unsigned long chip_id = ESP.getEfuseMac();
   #else
@@ -79,15 +78,15 @@ String mqtt_pass = "";
 String mqtt_feed_prefix = "";
 
 // Calibration Settings
-String voltage_cal = "";
-String ct1_cal = "";
-String ct2_cal = "";
-String freq_cal = "";
-String gain_cal = "";
+int voltage_cal = 0;
+int ct1_cal = 0;
+int ct2_cal = 0;
+int freq_cal = 0;
+int gain_cal = 0;
 #ifdef SOLAR_METER
-String svoltage_cal = "";
-String sct1_cal = "";
-String sct2_cal = "";
+int svoltage_cal = 0;
+int sct1_cal = 0;
+int sct2_cal = 0;
 #endif
 
 // Timer Settings 
@@ -138,15 +137,15 @@ ConfigOpt *opts[] =
   new ConfigOptDefenition<String>(mqtt_feed_prefix, "", "mqtt_feed_prefix", "mp"),
 
 // Calibration settings
-  new ConfigOptDefenition<String>(voltage_cal, "3920", "voltage_cal", "cv"),
-  new ConfigOptDefenition<String>(ct1_cal, "39473", "ct1_cal", "ct1"),
-  new ConfigOptDefenition<String>(ct2_cal, "39473", "ct2_cal", "ct2"),
-  new ConfigOptDefenition<String>(freq_cal, "4485", "freq_cal", "cf"),
-  new ConfigOptDefenition<String>(gain_cal, "21", "gain_cal", "cg"),
+  new ConfigOptDefenition<int>(voltage_cal, 3920, "voltage_cal", "cv"),
+  new ConfigOptDefenition<int>(ct1_cal, 39473, "ct1_cal", "ct1"),
+  new ConfigOptDefenition<int>(ct2_cal, 39473, "ct2_cal", "ct2"),
+  new ConfigOptDefenition<int>(freq_cal, 4485, "freq_cal", "cf"),
+  new ConfigOptDefenition<int>(gain_cal, 21, "gain_cal", "cg"),
   #ifdef SOLAR_METER
-  new ConfigOptDefenition<String>(svoltage_cal, "3920", "svoltage_cal", "scv"),
-  new ConfigOptDefenition<String>(sct1_cal, "39473", "sct1_cal", "sct1"),
-  new ConfigOptDefenition<String>(sct2_cal, "39473", "sct2_cal", "sct2"),
+  new ConfigOptDefenition<int>(svoltage_cal, 3920, "svoltage_cal", "scv"),
+  new ConfigOptDefenition<int>(sct1_cal, 39473, "sct1_cal", "sct1"),
+  new ConfigOptDefenition<int>(sct2_cal, 39473, "sct2_cal", "sct2"),
   #endif
 
 // Timer Settings, 16
@@ -260,6 +259,7 @@ void config_save_emoncms(bool enable, String server, String path, String node, S
   }
 
   appconfig.set(F("emoncms_server"), server);
+  appconfig.set(F("emoncms_path"), path);
   appconfig.set(F("emoncms_node"), node);
   appconfig.set(F("emoncms_apikey"), apikey);
   appconfig.set(F("emoncms_fingerprint"), fingerprint);
@@ -288,9 +288,9 @@ void config_save_mqtt_server(String server) {
   appconfig.commit();
 }
 
-void config_save_cal(String voltage, String ct1, String ct2, String freq, String gain
+void config_save_cal(int voltage, int ct1, int ct2, int freq, int gain
 #ifdef SOLAR_METER
-  , String svoltage, String sct1, String sct2);
+  , int svoltage, int sct1, int sct2);
 #else
   )
 #endif

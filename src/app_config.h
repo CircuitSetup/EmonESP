@@ -69,15 +69,15 @@ extern String mqtt_pass;
 extern String mqtt_feed_prefix;
 
 // Calibration Settings for CircuitSetup energy meter
-extern String voltage_cal;
-extern String ct1_cal;
-extern String ct2_cal;
-extern String freq_cal;
-extern String gain_cal;
+extern int voltage_cal;
+extern int ct1_cal;
+extern int ct2_cal;
+extern int freq_cal;
+extern int gain_cal;
 #ifdef SOLAR_METER
-extern String svoltage_cal;
-extern String sct1_cal;
-extern String sct2_cal;
+extern int svoltage_cal;
+extern int sct1_cal;
+extern int sct2_cal;
 #endif
 
 // Timer Settings 
@@ -137,9 +137,9 @@ extern void config_save_mqtt_server(String server);
 // Save the Calibration details
 // -------------------------------------------------------------------
 #ifdef SOLAR_METER
-extern void config_save_cal(String voltage, String ct1, String ct2, String freq, String gain, String svoltage, String sct1, String sct2);
+extern void config_save_cal(int voltage, int ct1, int ct2, int freq, int gain, int svoltage, int sct1, int sct2);
 #else
-extern void config_save_cal(String voltage, String ct1, String ct2, String freq, String gain);
+extern void config_save_cal(int voltage, int ct1, int ct2, int freq, int gain);
 #endif
 
 // -------------------------------------------------------------------
@@ -150,7 +150,7 @@ extern void config_save_admin(String user, String pass);
 // -------------------------------------------------------------------
 // Save the timer interface details
 // -------------------------------------------------------------------
-extern void config_save_timer(int start1, int stop1, int start2, int stop2, int voltage_output, int qtime_offset);
+extern void config_save_timer(int start1, int stop1, int start2, int stop2, int qvoltage_output, int qtime_offset);
 extern void config_save_voltage_output(int qvoltage_output, int save_to_eeprom);
 
 // -------------------------------------------------------------------

@@ -215,15 +215,15 @@ void config_load_v1_settings()
   }
 
   // Calibration settings
-  EEPROM_read_string(EEPROM_CAL_VOLTAGE_START, EEPROM_CAL_VOLTAGE_SIZE, voltage_cal);
-  EEPROM_read_string(EEPROM_CAL_CT1_START, EEPROM_CAL_CT1_SIZE, ct1_cal);
-  EEPROM_read_string(EEPROM_CAL_CT2_START, EEPROM_CAL_CT2_SIZE, ct2_cal);
-  EEPROM_read_string(EEPROM_CAL_FREQ_START, EEPROM_CAL_FREQ_SIZE, freq_cal);
-  EEPROM_read_string(EEPROM_CAL_GAIN_START, EEPROM_CAL_GAIN_SIZE, gain_cal);
+  EEPROM_read_int(EEPROM_CAL_VOLTAGE_START, voltage_cal);
+  EEPROM_read_int(EEPROM_CAL_CT1_START, ct1_cal);
+  EEPROM_read_int(EEPROM_CAL_CT2_START, ct2_cal);
+  EEPROM_read_int(EEPROM_CAL_FREQ_START, freq_cal);
+  EEPROM_read_int(EEPROM_CAL_GAIN_START, gain_cal);
 #ifdef SOLAR_METER
-  EEPROM_read_string(EEPROM_CAL_SVOLTAGE_START, EEPROM_CAL_SVOLTAGE_SIZE, svoltage_cal);
-  EEPROM_read_string(EEPROM_CAL_SCT1_START, EEPROM_CAL_SCT1_SIZE, sct1_cal);
-  EEPROM_read_string(EEPROM_CAL_SCT2_START, EEPROM_CAL_SCT2_SIZE, sct2_cal);
+  EEPROM_read_int(EEPROM_CAL_SVOLTAGE_START, svoltage_cal);
+  EEPROM_read_int(EEPROM_CAL_SCT1_START, sct1_cal);
+  EEPROM_read_int(EEPROM_CAL_SCT2_START, sct2_cal);
 #endif
 
   // Web server credentials
