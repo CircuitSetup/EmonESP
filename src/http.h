@@ -34,13 +34,15 @@
 #include <Arduino.h>
 #include <Print.h>
 #ifdef ESP32
-#include <WiFiClient.h>         // http GET request
-#include <WiFiClientSecure.h>   // Secure https GET request
+//#include <WiFiClient.h>         // http GET request
+//#include <WiFiClientSecure.h>   // Secure https GET request
+#include <HTTPClient.h>
 #elif defined(ESP8266)
 #include <WiFiClientSecureBearSSL.h>
 #include <ESP8266HTTPClient.h>
 #endif
 
+/*
 #ifdef ESP32
 // -------------------------------------------------------------------
 // HTTP or HTTPS GET Request
@@ -49,6 +51,7 @@
 extern String get_http(const char * host, String url, int port=80, const char * fingerprint=NULL);
 
 #elif defined(ESP8266)
+*/
 // -------------------------------------------------------------------
 // HTTPS SECURE GET Request
 // url: N/A
@@ -60,6 +63,6 @@ extern String get_https(const char* fingerprint, const char* host, String &path,
 // url: N/A
 // -------------------------------------------------------------------
 extern String get_http(const char* host, String &path);
-#endif
+//#endif
 
 #endif // _EMONESP_HTTP_H

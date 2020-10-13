@@ -41,15 +41,12 @@ boolean emoncms_updated = false;
 
 unsigned long packets_sent = 0;
 unsigned long packets_success = 0;
-
 unsigned long emoncms_connection_error_count = 0;
 
-const char *post_path = "/input/post?";
+const char *e_url = "/input/post?";
 
-static void emoncms_result(bool success, String message)
-{
+static void emoncms_result(bool success, String message) {
   StaticJsonDocument<128> event;
-
 
   if(success) {
     packets_success++;
@@ -64,8 +61,7 @@ static void emoncms_result(bool success, String message)
     }
   }
 
-  if(emoncms_connected != success)
-  {
+  if(emoncms_connected != success) {
     emoncms_connected = success;
     event[F("emoncms_connected")] = (int)emoncms_connected;
     event[F("emoncms_message")] = message.substring(0, 64);
@@ -73,15 +69,14 @@ static void emoncms_result(bool success, String message)
   }
 }
 
-void emoncms_publish(JsonDocument &data)
-{
+void emoncms_publish(JsonDocument &data) {
   Profile_Start(emoncms_publish);
 
-  if (config_emoncms_enabled() && emoncms_apikey != 0)
-  {
-    String url = post_path;
+  if (config_emoncms_enabled() && emoncms_apikey != 0) {
+    String url = emoncms_path.c_str();
     String json;
     serializeJson(data, json);
+    url += e_url;
     url += F("fulljson=");
     url += urlencode(json);
     url += F("&node=");
@@ -98,11 +93,11 @@ void emoncms_publish(JsonDocument &data)
     if (emoncms_fingerprint != 0) {
       // HTTPS on port 443 if HTTPS fingerprint is present
       DBUGLN(F("HTTPS Enabled"));
-      #ifdef ESP32
-      result = get_http(emoncms_server.c_str(), url, 443, emoncms_fingerprint.c_str());
-      #elif defined(ESP8266)
+      //#ifdef ESP32
+      //result = get_http(emoncms_server.c_str(), url, 443, emoncms_fingerprint.c_str());
+      //#else
       result = get_https(emoncms_fingerprint.c_str(), emoncms_server.c_str(), url, 443);
-      #endif
+      //#endif
     } else {
       // Plain HTTP if other emoncms server e.g EmonPi
       DBUGLN(F("Plain old HTTP"));
@@ -111,8 +106,7 @@ void emoncms_publish(JsonDocument &data)
 
     const size_t capacity = JSON_OBJECT_SIZE(2) + result.length();
     DynamicJsonDocument doc(capacity);
-    if(DeserializationError::Code::Ok == deserializeJson(doc, result.c_str(), result.length()))
-    {
+    if(DeserializationError::Code::Ok == deserializeJson(doc, result.c_str(), result.length())) {
       DBUGLN(F("Got JSON"));
       bool success = doc[F("success")]; // true
       emoncms_result(success, doc[F("message")]);

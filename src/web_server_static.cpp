@@ -1,4 +1,4 @@
-#if defined(ENABLE_DEBUG) && !defined(ENABLE_DEBUG_WEB)
+#if defined(ENABLE_DEBUG) && !defined(ENABLE_DEBUG_WEB_STATIC)
 #undef ENABLE_DEBUG
 #endif
 

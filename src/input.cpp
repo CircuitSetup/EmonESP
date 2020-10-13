@@ -67,8 +67,8 @@ boolean input_get(JsonDocument &data)
           value += line[i++];
         }
 
-        DBUGVAR(name);
-        DBUGVAR(value);
+        //DBUGVAR(name);
+        //DBUGVAR(value);
 
         if(name.length() > 0 && value.length() > 0) {
           // IMPROVE: check that value is only a number, toDouble() will skip white space and and chars after the number

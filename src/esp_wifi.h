@@ -116,7 +116,6 @@ extern String ipaddress;
 
 extern void wifi_setup();
 extern void wifi_loop();
-extern void wifi_scan();
 
 extern void wifi_restart();
 extern void wifi_disconnect();

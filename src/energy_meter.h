@@ -43,6 +43,9 @@
 #define OLED_RESET  17
 #endif
 
+/*
+    Uncomment if using the solar meter adapter board
+*/
 //#define SOLAR_METER
 
 /*
@@ -50,10 +53,10 @@
 */
 //#define EXPORT_METERING_VALS
 
-/*
+/*******************************************************************************
    The following calibration values can be set here or in the EmonESP interface
    EmonESP values take priority if they are set
-*/
+********************************************************************************/
 
 /*
    4485 for 60 Hz (North America)

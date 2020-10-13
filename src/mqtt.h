@@ -36,6 +36,10 @@
 #include <PubSubClient.h>             // MQTT https://github.com/knolleary/pubsubclient PlatformIO lib: 89
 #include <WiFiClient.h>
 
+#ifndef MQTT_CONNECT_TIMEOUT
+#define MQTT_CONNECT_TIMEOUT (5 * 1000)
+#endif // !MQTT_CONNECT_TIMEOUT
+
 // -------------------------------------------------------------------
 // Perform the background MQTT operations. Must be called in the main
 // loop function

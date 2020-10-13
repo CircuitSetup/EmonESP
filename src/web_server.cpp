@@ -95,7 +95,7 @@ void dumpRequest(AsyncWebServerRequest *request) {
   int i;
   for(i=0; i<headers; i++) {
     AsyncWebHeader* h = request->getHeader(i);
-    DBUGF("_HEADER[%s]: %s", h->name().c_str(), h->value().c_str());
+    //DBUGF("_HEADER[%s]: %s", h->name().c_str(), h->value().c_str());
   }
 
   int params = request->params();
@@ -314,7 +314,8 @@ void handleSaveMqtt(AsyncWebServerRequest *request) {
   }
 
   int port = 1883;
-  AsyncWebParameter *portParm = request->getParam("port");
+  AsyncWebParameter *portParm = request->getParam(F("port"), true);
+  DBUGVAR((uint32_t)portParm);
   if(nullptr != portParm) {
     port = portParm->value().toInt();
   }
@@ -957,6 +958,7 @@ void web_server_setup()
   server.on("/savenetwork", handleSaveNetwork);
   server.on("/saveemoncms", handleSaveEmoncms);
   server.on("/savemqtt", handleSaveMqtt);
+  server.on("/savecal", handleSaveCal);
   server.on("/saveadmin", handleSaveAdmin);
   server.on("/savetimer", handleSaveTimer);
 

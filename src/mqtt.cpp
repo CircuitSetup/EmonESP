@@ -39,10 +39,6 @@ static unsigned long mqttRestartTime = 0;
 int clientTimeout = 0;
 int i = 0;
 
-#ifndef MQTT_CONNECT_TIMEOUT
-#define MQTT_CONNECT_TIMEOUT (5 * 1000)
-#endif // !MQTT_CONNECT_TIMEOUT
-
 // -------------------------------------------------------------------
 // MQTT Control callback for WIFI Relay and Sonoff smartplug
 // -------------------------------------------------------------------
