@@ -642,7 +642,7 @@ void handleRestart(AsyncWebServerRequest *request) {
   AsyncResponseStream *response;
   if(false == requestPreProcess(request, response, CONTENT_TYPE_TEXT)) {
     return;
-}
+  }
 
   response->setCode(200);
   response->print(F("1"));

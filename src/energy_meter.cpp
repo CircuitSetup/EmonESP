@@ -316,7 +316,7 @@ void energy_meter_loop()
     DBUGS.println("Chip Temp: " + String(temp) + "C");
     DBUGS.println("Frequency: " + String(freq) + "Hz");
     DBUGS.println(" ");
-
+  */
     /* For calibrating offsets - not important unless measuring small loads
        hook up CTs to meter, but not around cable
        voltage input should be connected

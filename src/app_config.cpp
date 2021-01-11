@@ -30,6 +30,7 @@
 #include "mqtt.h"
 #include "emoncms.h"
 #include "input.h"
+#include "energy_meter.h"
 
 #define EEPROM_SIZE     4096
 #define CHECKSUM_SEED    128

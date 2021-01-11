@@ -80,15 +80,17 @@
       38302 - 9v AC Transformer - Jameco 112336
       29462 - 12v AC Transformer - Jameco 167151
    For Meters >= v1.4 rev.3
-      3920 - 9v AC Transformer - Jameco 157041
+      3920 - 9v AC Transformer - Jameco 157041 - default
 */
 #define VOLTAGE_GAIN 3920
 
 /*
    10170 - SCT-006 20A/25mA
+   39571 - SCT-010 80A/26.6mA
    25498 - SCT-013-000 100A/50mA
-   39473 - SCT-016 120A/40mA
+   39473 - SCT-016 120A/40mA - default
    46539 - Magnalab 100A
+   26315 - SCT-024 200A/100mA 
 */
 #define CURRENT_GAIN_CT1 39473
 #define CURRENT_GAIN_CT2 39473
