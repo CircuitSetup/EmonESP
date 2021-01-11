@@ -102,7 +102,7 @@ void energy_meter_setup() {
   if (ct1_cal > 0) CurrentGainCT1 = ct1_cal;
   if (ct2_cal > 0) CurrentGainCT2 = ct2_cal;
   if (freq_cal > 0) LineFreq = freq_cal;
-  if (gain_cal > 0) PGAGain = gain_cal;
+  if (gain_cal >= 0) PGAGain = gain_cal;
 
   /*Initialise the ATM90E32 & Pass CS pin and calibrations to its library -
     the 2nd (B) current channel is not used with the split phase meter */
