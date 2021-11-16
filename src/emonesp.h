@@ -92,7 +92,7 @@ void setTimeOffset();
 #endif
 
 #ifndef WIFI_BUTTON
-#define WIFI_BUTTON 3
+#define WIFI_BUTTON 14
 #endif
 
 #ifndef WIFI_BUTTON_PRESSED_STATE
