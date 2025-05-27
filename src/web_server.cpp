@@ -128,6 +128,8 @@ bool requestPreProcess(AsyncWebServerRequest *request, AsyncResponseStream *&res
   response = request->beginResponseStream(String(contentType));
   if(enableCors) {
     response->addHeader(F("Access-Control-Allow-Origin"), F("*"));
+    response->addHeader(F("Access-Control-Allow-Methods"), F("GET, POST, OPTIONS"));
+    response->addHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
   }
 
   response->addHeader(F("Cache-Control"), F("no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0"));
@@ -161,71 +163,37 @@ void handleScan(AsyncWebServerRequest *request) {
     return;
   }
 
-  #ifndef ENABLE_ASYNC_WIFI_SCAN
-    String json = "[";
-    int n = WiFi.scanComplete();
-    if(n == -2) {
-    #ifdef ESP32
-      WiFi.scanNetworks(true, true); //2nd true handles isHidden on ESP32
-    #else
-      WiFi.scanNetworks(true, false);
-    #endif
-    } else if(n) {
-      for (int i = 0; i < n; ++i) {
-        if(i) json += ",";
-        json += "{";
-        json += "\"rssi\":"+String(WiFi.RSSI(i));
-        json += ",\"ssid\":\""+WiFi.SSID(i)+"\"";
-        json += ",\"bssid\":\""+WiFi.BSSIDstr(i)+"\"";
-        json += ",\"channel\":"+String(WiFi.channel(i));
-        json += ",\"secure\":"+String(WiFi.encryptionType(i));
-        #ifndef ESP32
-        json += ",\"hidden\":"+String(WiFi.isHidden(i)?"true":"false");
-        #endif // !ESP32
-        json += "}";
-      }
-      WiFi.scanDelete();
-      if(WiFi.scanComplete() == -2){
-        WiFi.scanNetworks(true);
-      }
-    }
-    json += "]";
-    response->print(json);
-    request->send(response);
-  #else // ENABLE_ASYNC_WIFI_SCAN
-    // Async WiFi scan need the Git version of the ESP8266 core
-    if(WIFI_SCAN_RUNNING == WiFi.scanComplete()) {
-      response->setCode(500);
-      response->setContentType(CONTENT_TYPE_TEXT);
-      response->print("Busy");
-      request->send(response);
-      return;
-    }
-
-    DBUGF("Starting WiFi scan");
-    WiFi.scanNetworksAsync([request, response](int networksFound) {
-      DBUGF("%d networks found", networksFound);
-      String json = "[";
-      for (int i = 0; i < networksFound; ++i) {
-        if(i) json += ",";
-        json += "{";
-        json += "\"rssi\":"+String(WiFi.RSSI(i));
-        json += ",\"ssid\":\""+WiFi.SSID(i)+"\"";
-        json += ",\"bssid\":\""+WiFi.BSSIDstr(i)+"\"";
-        json += ",\"channel\":"+String(WiFi.channel(i));
-        json += ",\"secure\":"+String(WiFi.encryptionType(i));
-        #ifndef ESP32
-        json += ",\"hidden\":"+String(WiFi.isHidden(i)?"true":"false");
-        #endif
-        json += "}";
-      }
-      WiFi.scanDelete();
-      json += "]";
-      response->print(json);
-      request->send(response);
-    }, false);
+  String json = "[";
+  int n = WiFi.scanComplete();
+  if(n == -2) {
+  #ifdef ESP32
+    WiFi.scanNetworks(true, true); //2nd true handles isHidden on ESP32
+  #else
+    WiFi.scanNetworks(true, false);
   #endif
+  } else if(n) {
+    for (int i = 0; i < n; ++i) {
+      if(i) json += ",";
+      json += "{";
+      json += "\"rssi\":"+String(WiFi.RSSI(i));
+      json += ",\"ssid\":\""+WiFi.SSID(i)+"\"";
+      json += ",\"bssid\":\""+WiFi.BSSIDstr(i)+"\"";
+      json += ",\"channel\":"+String(WiFi.channel(i));
+      json += ",\"secure\":"+String(WiFi.encryptionType(i));
+      #ifndef ESP32
+      json += ",\"hidden\":"+String(WiFi.isHidden(i)?"true":"false");
+      #endif // !ESP32
+      json += "}";
+    }
+    WiFi.scanDelete();
+    if(WiFi.scanComplete() == -2){
+      WiFi.scanNetworks(true);
+    }
   }
+  json += "]";
+  response->print(json);
+  request->send(response);
+}
 
 // -------------------------------------------------------------------
 // Handle turning Access point off
@@ -282,12 +250,12 @@ void handleSaveEmoncms(AsyncWebServerRequest *request) {
     return;
   }
 
-  config_save_emoncms(isPositive(request->arg(F("enable"))),
-                      request->arg(F("server")),
-                      request->arg(F("path")),
-                      request->arg(F("node")),
-                      request->arg(F("apikey")),
-                      request->arg(F("fingerprint")));
+  config_save_emoncms(isPositive(request->getParam(F("enable"))),
+                      request->getParam(F("server")),
+                      request->getParam(F("path")),
+                      request->getParam(F("node")),
+                      request->getParam(F("apikey")),
+                      request->getParam(F("fingerprint")));
 
   char tmpStr[200];
   snprintf_P(tmpStr, sizeof(tmpStr), PSTR("Saved: %s %s %s %s %s"),
@@ -320,13 +288,13 @@ void handleSaveMqtt(AsyncWebServerRequest *request) {
     port = portParm->value().toInt();
   }
 
-  config_save_mqtt(isPositive(request->arg(F("enable"))),
-                   request->arg(F("server")),
+  config_save_mqtt(isPositive(request->getParam(F("enable"))),
+                   request->getParam(F("server")),
                    port,
-                   request->arg(F("topic")),
-                   request->arg(F("prefix")),
-                   request->arg(F("user")),
-                   request->arg(F("pass")));
+                   request->getParam(F("topic")),
+                   request->getParam(F("prefix")),
+                   request->getParam(F("user")),
+                   request->getParam(F("pass")));
 
   char tmpStr[200];
   snprintf_P(tmpStr, sizeof(tmpStr), PSTR("Saved: %s %d %s %s %s %s"), mqtt_server.c_str(), port, 
@@ -518,8 +486,7 @@ void handleStatus(AsyncWebServerRequest *request) {
     return;
   }
 
-  const size_t capacity = JSON_OBJECT_SIZE(40) + 1024;
-  DynamicJsonDocument doc(capacity);
+  StaticJsonDocument<1024> doc;
 
   if (wifi_mode_is_sta_only()) {
     doc[F("mode")] = "STA";
@@ -564,8 +531,7 @@ void handleConfigGet(AsyncWebServerRequest *request) {
     return;
   }
 
-  const size_t capacity = JSON_OBJECT_SIZE(40) + 1024;
-  DynamicJsonDocument doc(capacity);
+  StaticJsonDocument<1024> doc;
 
   // EmonESP Config
   doc[F("espflash")] = ESPAL.getFlashChipSize();
@@ -582,32 +548,7 @@ void handleConfigGet(AsyncWebServerRequest *request) {
 
 void handleConfigPost(AsyncWebServerRequest *request)
 {
-  AsyncResponseStream *response;
-  if(false == requestPreProcess(request, response)) {
-    return;
-  }
-
-  if(request->_tempObject)
-  {
-    String *body = (String *)request->_tempObject;
-
-    if(config_deserialize(*body)) {
-      config_commit();
-      response->setCode(200);
-      response->print(F("{\"msg\":\"done\"}"));
-    } else {
-      response->setCode(400);
-      response->print(F("{\"msg\":\"Could not parse JSON\"}"));
-    }
-
-    delete body;
-    request->_tempObject = NULL;
-  } else {
-    response->setCode(400);
-    response->print(F("{\"msg\":\"No Body\"}"));
-  }
-
-  request->send(response);
+  // handled in onBody lambda
 }
 
 // -------------------------------------------------------------------
@@ -870,6 +811,16 @@ void handleNotFound(AsyncWebServerRequest *request)
   DBUG(F("NOT_FOUND: "));
   dumpRequest(request);
 
+  // Handle CORS preflight request
+  if (request->method() == HTTP_OPTIONS) {
+    AsyncWebServerResponse *response = request->beginResponse(204); // No Content
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    response->addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    response->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    request->send(response);
+    return;
+  }
+
   if(wifi_mode_is_ap_only()) {
     // Redirect to the home page in AP mode (for the captive portal)
     AsyncResponseStream *response = request->beginResponseStream(String(CONTENT_TYPE_HTML));
@@ -952,8 +903,29 @@ void web_server_setup()
   // Handle status updates
   server.on("/status", handleStatus);
   server.on("/config", HTTP_GET, handleConfigGet);
-  server.on("/config", HTTP_POST, handleConfigPost, NULL, handleBody);
+  server.on("/config", HTTP_POST, handleConfigPost, nullptr,
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      if (index == 0) {
+        request->_tempObject = new String();
+      }
+  
+      String *body = (String *)request->_tempObject;
+      body->concat((const char*)data, len);
+  
+      if (index + len == total) {
+        if (config_deserialize(*body)) {
+          config_commit();
+          request->send(200, CONTENT_TYPE_JSON, "{\"msg\":\"done\"}");
+        } else {
+          request->send(400, CONTENT_TYPE_JSON, "{\"msg\":\"Could not parse JSON\"}");
+        }
+  
+        delete body;
+        request->_tempObject = nullptr;
+      }
+  });
 
+  
   // Handle HTTP web interface button presses
   server.on("/savenetwork", handleSaveNetwork);
   server.on("/saveemoncms", handleSaveEmoncms);
