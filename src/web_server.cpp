@@ -250,12 +250,12 @@ void handleSaveEmoncms(AsyncWebServerRequest *request) {
     return;
   }
 
-  config_save_emoncms(isPositive(request->getParam(F("enable"))),
-                      request->getParam(F("server")),
-                      request->getParam(F("path")),
-                      request->getParam(F("node")),
-                      request->getParam(F("apikey")),
-                      request->getParam(F("fingerprint")));
+  config_save_emoncms(isPositive(request->arg(F("enable"))),
+                      request->arg(F("server")),
+                      request->arg(F("path")),
+                      request->arg(F("node")),
+                      request->arg(F("apikey")),
+                      request->arg(F("fingerprint")));
 
   char tmpStr[200];
   snprintf_P(tmpStr, sizeof(tmpStr), PSTR("Saved: %s %s %s %s %s"),
@@ -288,13 +288,13 @@ void handleSaveMqtt(AsyncWebServerRequest *request) {
     port = portParm->value().toInt();
   }
 
-  config_save_mqtt(isPositive(request->getParam(F("enable"))),
-                   request->getParam(F("server")),
+  config_save_mqtt(isPositive(request->arg(F("enable"))),
+                   request->arg(F("server")),
                    port,
-                   request->getParam(F("topic")),
-                   request->getParam(F("prefix")),
-                   request->getParam(F("user")),
-                   request->getParam(F("pass")));
+                   request->arg(F("topic")),
+                   request->arg(F("prefix")),
+                   request->arg(F("user")),
+                   request->arg(F("pass")));
 
   char tmpStr[200];
   snprintf_P(tmpStr, sizeof(tmpStr), PSTR("Saved: %s %d %s %s %s %s"), mqtt_server.c_str(), port, 
@@ -531,7 +531,7 @@ void handleConfigGet(AsyncWebServerRequest *request) {
     return;
   }
 
-  StaticJsonDocument<1024> doc;
+  DynamicJsonDocument doc(1024);
 
   // EmonESP Config
   doc[F("espflash")] = ESPAL.getFlashChipSize();
