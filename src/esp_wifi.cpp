@@ -87,10 +87,6 @@ void startAP() {
   digitalWrite(WIFI_LED, LOW);
   #endif
 
-  #ifdef ESP32
-  WiFi.persistent(false); //workaround for bug that causes a crash if a connection to wifi is lost and ESP32 has to go into AP mode
-  #endif
-  //WiFi.enableAP(true); not needed since WiFi.mode(WIFI_AP) calls this
   WiFi.mode(WIFI_AP);
   delay(500); // Without delay the IP address is sometimes blank
 
@@ -139,14 +135,18 @@ void startClient() {
   #ifdef ESP8266
   WiFi.hostname(node_name.c_str());
   #else
-  WiFi.persistent(false); //workaround for bug that causes a crash if a connection to wifi is lost
   WiFi.setHostname(node_name.c_str());
   #endif
 
   WiFi.begin(esid.c_str(), epass.c_str());
+
   WiFi.enableSTA(true);
   delay(100);
-
+  #ifdef ESP32
+  WiFi.setSleep(WIFI_PS_NONE);  // Disable power saving mode for more stable connection
+  WiFi.setAutoReconnect(true);
+  #endif
+ 
   #ifdef ENABLE_WDT
   feedLoopWDT();
   #endif
@@ -381,12 +381,20 @@ void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
 
 void wifi_setup() {
 
+  WiFi.persistent(false);
+
   #ifdef WIFI_LED
   pinMode(WIFI_LED, OUTPUT);
   digitalWrite(WIFI_LED, wifiLedState);
   #endif
 
-  randomSeed(analogRead(0));
+  #ifdef ESP32
+    uint32_t seed;
+    esp_fill_random(&seed, sizeof(seed));
+    randomSeed(seed);
+  #else
+    randomSeed(micros());
+  #endif
 
   // If we have an SSID configured at this point we have likely
   // been running another firmware, clear the results
@@ -570,7 +578,7 @@ void wifi_loop()
 #endif
   }
 
-  if(dnsServerStarted) {
+  if (dnsServerStarted && (WiFi.getMode() & WIFI_AP)) {
     dnsServer.processNextRequest(); // Captive portal DNS re-dierct
   }
 
@@ -587,7 +595,6 @@ void wifi_restart() {
 void wifi_disconnect() {
   if (wifi_mode_is_sta()) {
     DEBUG.println("WiFi disconnect called");
-    WiFi.persistent(false);
     delay(50);
     WiFi.disconnect();
   }
