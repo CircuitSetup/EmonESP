@@ -37,7 +37,6 @@ static long nextMqttReconnectAttempt = 0;
 static unsigned long mqttRestartTime = 0;
 
 int clientTimeout = 0;
-int i = 0;
 
 // -------------------------------------------------------------------
 // MQTT Control callback for WIFI Relay and Sonoff smartplug
@@ -45,8 +44,8 @@ int i = 0;
 static void mqtt_msg_callback(char *topic, byte *payload, unsigned int length) {
 
   String topicstr = String(topic);
-  String payloadstr = String((char *)payload);
-  payloadstr = payloadstr.substring(0,length);
+  String payloadstr = String((char *)payload).substring(0, length);
+  payloadstr.trim(); // remove unexpected whitespace  
 
   DBUGF("Message arrived topic:[%s] payload: [%s]", topic, payload);
 
@@ -138,8 +137,21 @@ boolean mqtt_connect()
   DEBUG.println(mqtt_server.c_str());
 
   String strID = String(node_name.c_str());
-  if (mqttclient.connect(strID.c_str(), mqtt_user.c_str(), mqtt_pass.c_str())) {  // Attempt to connect
+  String lwtTopic = mqtt_topic + "/" + node_name + "/status";
+
+  bool connected = mqttclient.connect(
+    strID.c_str(),
+    mqtt_user.c_str(),
+    mqtt_pass.c_str(),
+    lwtTopic.c_str(),
+    1,        // QoS
+    true,     // retain
+    "offline"
+  );
+
+  if (connected) {  // Attempt to connect
     DEBUG.println(F("MQTT connected"));
+    mqtt_publish("status", "online");
     mqtt_publish("describe", node_type);
 
     String subscribe_topic = mqtt_topic + "/" + node_name + "/in/#";
@@ -162,7 +174,7 @@ void mqtt_publish(String topic_p2, String data)
     return;
   }
 
-  String topic = mqtt_topic + "/" + node_name + "/" + topic_p2;
+  String topic = String(mqtt_topic) + "/" + node_name + "/" + topic_p2;
   mqttclient.publish(topic.c_str(), data.c_str());
 }
 
