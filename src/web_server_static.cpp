@@ -34,7 +34,7 @@ StaticFileWebHandler::StaticFileWebHandler()
 {
 }
 
-bool StaticFileWebHandler::_getFile(AsyncWebServerRequest *request, StaticFile **file)
+bool StaticFileWebHandler::_getFile(AsyncWebServerRequest *request, StaticFile **file) const
 {
   // Remove the found uri
   String path = request->url();
@@ -60,7 +60,7 @@ bool StaticFileWebHandler::_getFile(AsyncWebServerRequest *request, StaticFile *
   return false;
 }
 
-bool StaticFileWebHandler::canHandle(AsyncWebServerRequest *request)
+bool StaticFileWebHandler::canHandle(AsyncWebServerRequest *request) const
 {
   StaticFile *file = NULL;
   if (request->method() == HTTP_GET &&
@@ -68,7 +68,7 @@ bool StaticFileWebHandler::canHandle(AsyncWebServerRequest *request)
   {
     request->_tempObject = file;
     DBUGF("[StaticFileWebHandler::canHandle] TRUE");
-    request->addInterestingHeader(HEADER_IF_MODIFIED_SINCE);
+    // request->addInterestingHeader(HEADER_IF_MODIFIED_SINCE);  // obsolete in current API
     return true;
   }
 
@@ -88,8 +88,8 @@ void StaticFileWebHandler::handleRequest(AsyncWebServerRequest *request)
 
     // Are we authenticated
     if(wifi_mode_is_sta() &&
-      _username != "" && _password != "" &&
-      false == request->authenticate(_username.c_str(), _password.c_str()))
+      www_username != "" && www_password != "" &&
+      false == request->authenticate(www_username.c_str(), www_password.c_str()))
     {
       request->requestAuthentication(node_name.c_str());
       return;
@@ -252,7 +252,9 @@ size_t StaticFileResponse::writeData(AsyncWebServerRequest *request)
 
 void StaticFileResponse::_respond(AsyncWebServerRequest *request){
   _state = RESPONSE_HEADERS;
-  _header = _assembleHead(request->version());
+  String headBuffer;
+  _assembleHead(headBuffer, request->version());
+  _header = headBuffer;
 
   _state = RESPONSE_HEADERS;
   ptr = _header.c_str();

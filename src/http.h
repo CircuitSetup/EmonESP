@@ -34,8 +34,8 @@
 #include <Arduino.h>
 #include <Print.h>
 #ifdef ESP32
-//#include <WiFiClient.h>         // http GET request
-//#include <WiFiClientSecure.h>   // Secure https GET request
+#include <WiFiClient.h>         // http GET request
+#include <WiFiClientSecure.h>   // Secure https GET request
 #include <HTTPClient.h>
 #elif defined(ESP8266)
 #include <WiFiClientSecureBearSSL.h>

@@ -100,7 +100,7 @@ void dumpRequest(AsyncWebServerRequest *request) {
 
   int params = request->params();
   for(i = 0; i < params; i++) {
-    AsyncWebParameter* p = request->getParam(i);
+    const AsyncWebParameter* p = request->getParam(i);
     if(p->isFile()){
       DBUGF("_FILE[%s]: %s, size: %u", p->name().c_str(), p->value().c_str(), p->size());
     } else if(p->isPost()){
@@ -314,7 +314,7 @@ void handleSaveMqtt(AsyncWebServerRequest *request) {
   }
 
   int port = 1883;
-  AsyncWebParameter *portParm = request->getParam(F("port"), true);
+  const AsyncWebParameter *portParm = request->getParam(F("port"), true);
   DBUGVAR((uint32_t)portParm);
   if(nullptr != portParm) {
     port = portParm->value().toInt();
