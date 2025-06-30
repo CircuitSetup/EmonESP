@@ -135,7 +135,7 @@ ConfigOpt *opts[] =
   new ConfigOptDefenition<String>(mqtt_topic, "emonesp", "mqtt_topic", "mt"),
   new ConfigOptDefenition<String>(mqtt_user, "emonpi", "mqtt_user", "mu"),
   new ConfigOptSecret(mqtt_pass, "emonpimqtt2016", "mqtt_pass", "mp"),
-  new ConfigOptDefenition<String>(mqtt_feed_prefix, "", "mqtt_feed_prefix", "mp"),
+  new ConfigOptDefenition<String>(mqtt_feed_prefix, "", "mqtt_feed_prefix", "mf"),
 
 // Calibration settings
   new ConfigOptDefenition<int>(voltage_cal, 3920, "voltage_cal", "cv"),
